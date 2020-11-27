@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="ec44967c-20dc-43ee-9a14-88f9382346ae" name="Default Changelist" comment="" />
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="ComposerSettings">
+    <execution>
+      <executable />
+    </execution>
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="JavaScript File" />
+      </list>
+    </option>
+  </component>
+  <component name="ProjectId" id="1kmdi1PZ78b6BKARrOyaXD42po5" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showExcludedFiles" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">
+    <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
+    <property name="WebServerToolWindowFactoryState" value="false" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/models" />
+    <property name="nodejs_package_manager_path" value="npm" />
+    <property name="ts.external.directory.path" value="C:\Program Files\JetBrains\PhpStorm 2019.3.1\plugins\JavaScriptLanguage\jsLanguageServicesImpl\external" />
+  </component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="A:\project_2020\11_07_DexTradingView\work\mock\models" />
+      <recent name="A:\project_2020\11_07_DexTradingView\work\mock\controllers" />
+      <recent name="A:\project_2020\11_07_DexTradingView\work\mock\routes" />
+    </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="A:\project_2020\11_07_DexTradingView\work\mock\sockets" />
+    </key>
+  </component>
+  <component name="ServiceViewManager">
+    <option name="viewStates">
+      <list>
+        <serviceView>
+          <treeState>
+            <expand />
+            <select />
+          </treeState>
+        </serviceView>
+      </list>
+    </option>
+  </component>
+  <component name="SvnConfiguration">
+    <configuration />
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="ec44967c-20dc-43ee-9a14-88f9382346ae" name="Default Changelist" comment="" />
+      <created>1606309823336</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1606309823336</updated>
+      <workItem from="1606309825393" duration="7423000" />
+      <workItem from="1606355847643" duration="33000" />
+      <workItem from="1606355894911" duration="56446000" />
+      <workItem from="1606463963462" duration="18956000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="1" />
+  </component>
+  <component name="WindowStateProjectService">
+    <state x="2312" y="183" key="#Notifications" timestamp="1606355913667">
+      <screen x="1920" y="0" width="1920" height="1040" />
+    </state>
+    <state x="2312" y="183" key="#Notifications/0.0.1920.1040/1920.0.1920.1040@1920.0.1920.1040" timestamp="1606355913667" />
+    <state x="2660" y="276" key="FileChooserDialogImpl" timestamp="1606311551919">
+      <screen x="1920" y="0" width="1920" height="1040" />
+    </state>
+    <state x="2660" y="276" key="FileChooserDialogImpl/0.0.1920.1040/1920.0.1920.1040@1920.0.1920.1040" timestamp="1606311551919" />
+    <state x="1955" y="19" width="1604" height="1025" key="dock-window-1" timestamp="1606471502835">
+      <screen x="1920" y="0" width="1920" height="1040" />
+    </state>
+    <state x="1955" y="19" width="1604" height="1025" key="dock-window-1/0.0.1920.1040/1920.0.1920.1040@0.0.1920.1040" timestamp="1606471502835" />
+    <state x="2336" y="263" width="672" height="678" key="search.everywhere.popup" timestamp="1606363037113">
+      <screen x="1920" y="0" width="1920" height="1040" />
+    </state>
+    <state x="2336" y="263" width="672" height="678" key="search.everywhere.popup/0.0.1920.1040/1920.0.1920.1040@0.0.1920.1040" timestamp="1606363037113" />
+  </component>
+</project>

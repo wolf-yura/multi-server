@@ -2,8 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="ec44967c-20dc-43ee-9a14-88f9382346ae" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/cron.js" beforeDir="false" afterPath="$PROJECT_DIR$/cron.js" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -76,7 +75,7 @@
       <workItem from="1606355847643" duration="33000" />
       <workItem from="1606355894911" duration="56446000" />
       <workItem from="1606463963462" duration="18956000" />
-      <workItem from="1606496517604" duration="146000" />
+      <workItem from="1606496517604" duration="589000" />
     </task>
     <servers />
   </component>

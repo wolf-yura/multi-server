@@ -12,10 +12,10 @@ mongoose.connect('mongodb://' + config.mongo.host + ':' + config.mongo.port + '/
             console.log('[' + d.toLocaleString() + '] ' + 'DB error');
         } else {
             console.log('[' + d.toLocaleString() + '] ' + 'product cron ...');
-            let marketCheck = await Market.findOne({});
-            if (!marketCheck) await CronController.cron_markets();
-            await CronController.cron_tickers();
-            await CronController.cron_trade();
+            // let marketCheck = await Market.findOne({});
+            // if (!marketCheck) await CronController.cron_markets();
+            // await CronController.cron_tickers();
+            // await CronController.cron_trade();
             // await CronController.cron_chart_15m();
             // await CronController.cron_chart_30m();
             // await CronController.cron_chart_60m();
@@ -26,8 +26,8 @@ mongoose.connect('mongodb://' + config.mongo.host + ':' + config.mongo.port + '/
             console.log("All are created");
             // update trade data
             cron.schedule('*/15 * * * * *', async function () {  // per 1 minutes
-                await CronController.cron_trade();
-                // await CronController.live_trade();
+                // await CronController.cron_trade();
+                await CronController.live_trade();
             });
             // update ticker data
             cron.schedule('*/3 * * * *', async function () {  // per 3 minutes
@@ -35,7 +35,7 @@ mongoose.connect('mongodb://' + config.mongo.host + ':' + config.mongo.port + '/
             });
             // update order data
             cron.schedule('*/5 * * * *', async function () {  // per 5 minutes
-                // await CronController.live_orders();
+                await CronController.live_orders();
             });
         }
     });

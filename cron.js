@@ -25,7 +25,7 @@ mongoose.connect('mongodb://' + config.mongo.host + ':' + config.mongo.port + '/
 
             console.log("All are created");
             // update trade data
-            cron.schedule('*/15 * * * * *', async function () {  // per 1 minutes
+            cron.schedule('*/1 * * * *', async function () {  // per 1 minutes
                 // await CronController.cron_trade();
                 await CronController.live_trade();
             });

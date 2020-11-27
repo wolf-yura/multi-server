@@ -2,10 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="ec44967c-20dc-43ee-9a14-88f9382346ae" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/cron.js" beforeDir="false" afterPath="$PROJECT_DIR$/cron.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/sockets/customRanger.js" beforeDir="false" afterPath="$PROJECT_DIR$/sockets/customRanger.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/sockets/ranger.js" beforeDir="false" afterPath="$PROJECT_DIR$/sockets/ranger.js" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -77,7 +74,7 @@
       <workItem from="1606355847643" duration="33000" />
       <workItem from="1606355894911" duration="56446000" />
       <workItem from="1606463963462" duration="18956000" />
-      <workItem from="1606496517604" duration="2584000" />
+      <workItem from="1606496517604" duration="2729000" />
     </task>
     <servers />
   </component>

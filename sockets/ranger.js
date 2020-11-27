@@ -66,7 +66,17 @@ const orderBookSnapshotMock = (ws) => async () => {
     let marketId = customRanger.getMarketId(ws.streams);
     ws.sequences[marketId] = 1;
     console.log(`orderBookSnapshotMock called: ${marketId}`);
-    await customRanger.getOrderBook(marketId);
+    let orders = await customRanger.getOrderBook(marketId);
+    try {
+        if (isSubscribed(ws.streams, `${marketId}.ob-inc`)) {
+            console.log(`orderBookSnapshotMock sending: ${marketId}`);
+            const payload = {};
+            payload[`${marketId}.ob-snap`] = {"asks": orders.asks, "bids": orders.bids, "sequence":1};
+            ws.send(JSON.stringify(payload));
+        }
+    } catch (error) {
+        console.log(`failed to send ranger message: ${error}`);
+    }
     // ws.send(JSON.stringify( {
     //     "julbbnb.ob-snap":
     //         {"asks": [["15.0","30.729274681425732"],["20.0","109.22927468142574"],["20.5","39.229274681425736"],["30.0","30.229274681425732"]],
@@ -79,7 +89,7 @@ const orderBookSnapshotMock = (ws) => async () => {
 
 const orderBookIncrementMock = (ws, marketId) => () => {
     let marketId = customRanger.getMarketId(ws.streams);
-    var event = Helpers.getDepthIncrement();
+    let event = Helpers.getDepthIncrement();
     event.sequence = ++ws.sequences[marketId];
     sendEvent(ws, `${marketId}.ob-inc`, event);
 };

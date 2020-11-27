@@ -21,7 +21,7 @@ mongoose.connect('mongodb://' + config.mongo.host + ':' + config.mongo.port + '/
             // await CronController.cron_chart_60m();
             // await CronController.cron_chart_120m();
             // await CronController.cron_chart_240m();
-            // await CronController.cron_orders();
+            await CronController.cron_orders();
 
             console.log("All are created");
             // update trade data
@@ -35,7 +35,7 @@ mongoose.connect('mongodb://' + config.mongo.host + ':' + config.mongo.port + '/
             });
             // update order data
             cron.schedule('*/5 * * * *', async function () {  // per 5 minutes
-                await CronController.live_orders();
+                // await CronController.live_orders();
             });
         }
     });

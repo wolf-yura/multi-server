@@ -125,14 +125,22 @@ const customRanger = {
         console.log("marketId: ", marketId);
         let pair = await Market.findOne({$or: [{id: marketId}, {pair_id: marketId}]});
         if (!pair) return {asks: [], bids: []};
-        // let askOrders = await Order.find({inputToken: pair.base_contract, outputToken: pair.quote_contract}).sort({createdAt: -1}).limit(25);
-        let orders = await Order.find({}).sort({createdAt: -1}).limit(3);
-        for (let i = 0; i < orders.length; i++) {
-            console.log(orders[i].inputToken);
-            console.log(orders[i].inputAmount);
-            let inputAmount = k_functions.big_to_float(orders[i].inputAmount);
-            console.log(inputAmount);
+        let askOrders = await Order.find({inputToken: pair.base_contract, outputToken: pair.quote_contract}).sort({createdAt: -1}).limit(25);
+        let bidOrders = await Order.find({inputToken: pair.quote_contract, outputToken: pair.base_contract}).sort({createdAt: -1}).limit(25);
+        let asks = []; let bids = [];
+        for (let i = 0; i < askOrders.length; i++) {
+            let inputAmount = k_functions.big_to_float(askOrders[i].inputAmount);
+            let minReturn = k_functions.big_to_float(askOrders[i].minReturn);
+            let price = parseFloat((minReturn / inputAmount).toFixed(6));
+            asks.push([price, inputAmount]);
         }
+        for (let j = 0; j < bidOrders.length; j++) {
+            let inputAmount = k_functions.big_to_float(bidOrders[j].inputAmount);
+            let minReturn = k_functions.big_to_float(bidOrders[j].minReturn);
+            let price = parseFloat((inputAmount / minReturn).toFixed(6));
+            bids.push([price, inputAmount]);
+        }
+        return {asks: asks, bids: bids};
     },
 };
 

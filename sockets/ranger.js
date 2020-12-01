@@ -315,7 +315,7 @@ class RangerMock {
         // console.log("streams: ".magenta, streams);
         let marketId = customRanger.getMarketId(streams);
         ws.streams = Helpers.unique(ws.streams.concat(streams));
-        console.log("subcribed to ws.streams: ".magenta, marketId, ws.streams);
+        // console.log("subcribed to ws.streams: ".magenta, marketId, ws.streams);
         // orderBookSnapshotMock(ws, marketId)();
         // this.markets.forEach((name) => {
         // let { marketId } = Helpers.getMarketInfos(name);

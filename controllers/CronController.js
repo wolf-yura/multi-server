@@ -420,6 +420,8 @@ module.exports = BaseController.extend({
             time_from = orderHistory[0].createdAt;
         }
         let orders = await Function.k_order_live(time_from, time_to);
+        console.log(time_from, time_to);
+        console.log("Live Orders: ", orders.length);
         for (let i = 0; i < orders.length; i++) {
             let checkOrder = await Order.findOne({id: orders[i].id});
             if (!checkOrder) {

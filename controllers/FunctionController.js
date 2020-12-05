@@ -273,7 +273,7 @@ module.exports = BaseController.extend({
     k_order_live: async function (time_from, time_to) {
         const query = `
           query getOrdersFromBlock($time_from: Int, $time_to: Int) {
-            orders(first: 200, where: {createdAt_gte: $time_to, createdAt_lte: $time_to}, orderBy: createdAt, orderDirection: desc) {
+            orders(first: 200, where: {createdAt_gte: $time_from, createdAt_lte: $time_to}, orderBy: createdAt, orderDirection: desc) {
               id
               inputToken
               outputToken

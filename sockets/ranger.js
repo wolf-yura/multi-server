@@ -42,6 +42,7 @@ const ordersMock = (ws) => async () => {
     let ownerAddress= customRanger.getOwnerAddress(ws.streams);
     // console.log("market Id ", marketId);
     ws.sequences[marketId] = 1;
+    //console.log(ws.readyState);
     // console.log(`orderBookSnapshotMock called: ${marketId}`);
 
     let orders = await customRanger.getOrderBook(marketId);
@@ -307,6 +308,7 @@ class RangerMock {
     close() {
         this.wss.close();
     }
+     timerList= [];
     initConnection(ws, request) {
         ws.authenticated = true;
         ws.timers = [];
@@ -338,8 +340,15 @@ class RangerMock {
         ws.timers.push(setInterval(ordersMock(ws), 5000));
         
     }
-    closeConnection() {
-        console.log('Ranger: connection closed');
+    closeConnection(ws) {
+        console.log('Ranger: connection closed');   
+    //--- when socket is closed, all timers are closed.     
+       ws.timers.forEach(timer => {
+        //    console.log(timer)
+        clearInterval(timer)    
+       });
+       
+        
     }
     onMessage(ws, message) {
         if (message.length === 0)

@@ -1,5 +1,6 @@
 const colors = require('colors');
 let BigNumber = require('big-number');
+const { parseUnits } = require('ethers/lib/utils');
 const k_functions = require('./k_functions')();
 const Ticker = require('../models/Ticker').Ticker;
 const Trade = require('../models/Trade').Trade;
@@ -8,12 +9,21 @@ const Order = require('../models/Order').Order;
 
 const customRanger = {
     getMarketId: function (streams) {
+        console.log(streams)
         let marketID = "";
         for (let k = 0; k < streams.length; k++) {
             let item = streams[k];
             if (item.indexOf(".trades") > -1) marketID = item.replace(".trades", "");
         }
         return marketID;
+    },
+    getOwnerAddress: function (streams) {
+        let ownerAddress = "";
+        for (let k = 0; k < streams.length; k++) {
+            let item = streams[k];
+            if (item.indexOf(".myorders") > -1) ownerAddress = item.replace(".myorders", "");
+        }
+        return ownerAddress;
     },
     getKLineParams: function (streams) {
         let pairAddress = "", period = 15;
@@ -141,6 +151,86 @@ const customRanger = {
             bids.push([price, inputAmount]);
         }
         return {asks: asks, bids: bids};
+    },
+    // 
+    getMyOrders: async function (ownerAddress, marketId) {
+        console.log("--- owner address: ", ownerAddress);          
+        console.log("--- market id ", marketId)      ;
+        let pair = await Market.findOne({$or: [{id: marketId}, {pair_id: marketId}]});
+        let base_contract = pair.base_contract;
+        let quote_contract = pair.quote_contract;
+
+        if(base_contract == "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c")
+           base_contract =  "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
+        if(quote_contract == "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c")
+            quote_contract =  "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
+        
+        console.log(base_contract, quote_contract);
+
+        // let myOrderAll = await Order.find({ owner: ownerAddress, $or: [
+        //        { inputToken: base_contract, outputToken: quote_contract  },
+        //        { outputToken: base_contract, inputToken: quote_contract  } ]
+        //      }).limit(500);
+
+        let myOrderAll = await Order.find({ owner: ownerAddress }).limit(500);
+
+        let myOrderOpen = [];
+        let myOrderHistory = [];
+        console.log("myorder count", myOrderAll.length)
+
+        for (let i = 0; i < myOrderAll.length; i++) {                                 
+            let inputAmount = k_functions.big_to_float(myOrderAll[i].inputAmount);
+            let minReturn = k_functions.big_to_float(myOrderAll[i].minReturn);
+            let price = parseFloat((minReturn / inputAmount).toFixed(6));
+            // const side = myOrderAll[i].inputToken == pair.base_contract? "buy" : "sell";
+            let remaining_volume = 0;
+            let inputToken = myOrderAll[i].inputToken;
+            let outputToken = myOrderAll[i].outputToken;
+            if(inputToken == "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee")
+                inputToken =  "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c";
+            if(outputToken == "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee")
+                outputToken =  "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c";        
+            // console.log(inputToken, outputToken);
+            const market = await Market.findOne( {$or: [ { quote_contract: inputToken, base_contract:outputToken }, { base_contract: inputToken, quote_contract:outputToken  } ]});
+            
+            const side = inputToken == market.base_contract? "buy" : "sell";
+            if(side =="sell")
+                price = 1.0/ price;
+
+            let state = "done";
+            if(myOrderAll[i].status ==="open")
+              {
+                  state = "wait"             
+                  remaining_volume= inputAmount; 
+              }
+            else if(myOrderAll[i].status ==="cancelled")
+              state = "cancel";
+            const market_id= market.id;
+            // console.log(market_id);
+            const orderData={
+                state:state , 
+                volume: inputAmount,
+                price: price, 
+                id: myOrderAll[i].id, 
+                remaining_volume: remaining_volume, 
+                origin_volume: inputAmount, 
+                market: escape(market.id), 
+                at: myOrderAll[i].createdAt,
+                side : side,
+                // pair : market.id
+                };
+            
+
+            if(myOrderAll[i].status==="executed" || myOrderAll[i].status === "cancelled")
+            {
+                orderData.excuted_vloume= inputAmount; 
+            }
+            if( myOrderAll[i].status==="open")
+                myOrderOpen.push(orderData);
+            else
+                myOrderHistory.push(orderData);
+        }        
+        return {myOrderOpen: myOrderOpen, myOrderHistory: myOrderHistory};
     },
 };
 

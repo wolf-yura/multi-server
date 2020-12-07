@@ -36,6 +36,32 @@ const tickersMock = (ws) => async () => {
     ws.send(JSON.stringify(pairTicker));
 };
 
+const ordersMock = (ws) => async () => {
+    //let ownerAddress= "0x7f1b39cff0e6e02f0e8d35dd49e302cc78a306e1";
+    let marketId = customRanger.getMarketId(ws.streams);
+    let ownerAddress= customRanger.getOwnerAddress(ws.streams);
+    // console.log("market Id ", marketId);
+    ws.sequences[marketId] = 1;
+    // console.log(`orderBookSnapshotMock called: ${marketId}`);
+
+    let orders = await customRanger.getOrderBook(marketId);
+    try {
+        if (isSubscribed(ws.streams, `${marketId}.ob-inc`)) {
+            let orders = await customRanger.getMyOrders(ownerAddress, marketId);
+            let pairOrders = {
+            "private.orders": orders
+            };                    
+            
+            console.log(`-----sending my orders: ${marketId}`);
+            // const payload = {};
+            // payload[`${marketId}.ob-snap`] = {"asks": orders.asks, "bids": orders.bids, "sequence":1};
+            ws.send(JSON.stringify(pairOrders));
+        }
+    } catch (error) {
+        console.log(`failed to send ranger message: ${error}`);
+    }    
+};
+
 const balancesMock = (ws) => () => {
     sendEvent(ws, "balances", Helpers.getBalances());
 };
@@ -94,6 +120,34 @@ const orderBookIncrementMock = (ws, marketId) => () => {
     sendEvent(ws, `${marketId}.ob-inc`, event);
 };
 
+
+const getMyOrders = (ws) => async () => {    
+
+    console.log("----ws.streams ", ws.streams);
+    let marketId = customRanger.getMarketId(ws.streams);
+    // ws.sequences[marketId] = 1;
+    let ownerAddress= "0xafce130b2cd93d191a6c16e784a4f200107399ee";
+    console.log(`orderBookSnapshotMock called: ${ownerAddress}`);
+    let orders = await customRanger.getMyOrders(ownerAddress, marketId);
+    try {
+        if (isSubscribed(ws.streams, `${marketId}.ob-inc`)) {
+            console.log(`my order sending: ${ownerAddress}`);
+            const payload = {};
+            payload[`orders`] = {"open": orders.myOrderOpen , "history": orders.myOrderHistory};
+            ws.send(JSON.stringify(payload));
+        }
+    } catch (error) {
+        console.log(`failed to send ranger message: ${error}`);
+    }
+    // ws.send(JSON.stringify( {
+    //     "julbbnb.ob-snap":
+    //         {"asks": [["15.0","30.729274681425732"],["20.0","109.22927468142574"],["20.5","39.229274681425736"],["30.0","30.229274681425732"]],
+    //             "bids":[["10.95","30.729274681425732"],["10.90","74.22927468142574"],["10.85","64.22927468142574"],["10.70","39.229274681425736"]],
+    //             "sequence":1
+    //         }}));
+    // };
+    // ws.send(JSON.stringify(orderBook));
+};
 /*
     Success order scenario:
         * Private messages:
@@ -260,7 +314,9 @@ class RangerMock {
         ws.sequences = {};
 
         console.log(`Ranger: connection accepted, url: ${request.url}`);
+        // console.log(request.query.streams);
         this.subscribe(ws, Helpers.getStreamsFromUrl(request.url));
+
         // // original
         // // ws.timers.push(setInterval(tickersMock(ws, this.markets), 3000));
         // ws.timers.push(setInterval(balancesMock(ws), 3000));
@@ -274,10 +330,13 @@ class RangerMock {
         // ws.timers.push(setTimeout(() => {sendEvent(ws, "deposit_address", { currency: "xrp", address: "a4E49HU6CTHyYMmsYt3F1ar1q5W89t3hfQ?dt=1" })}, 10000));
         
         ws.timers.push(setInterval(tickersMock(ws), 3000));
+        
         // ws.timers.push(setInterval(orderBookIncrementMock(ws), 2000));
         // ws.timers.push(setInterval(orderBookUpdateMock(ws), 2000));
         // ws.timers.push(setInterval(matchedTradesMock(ws), 1000));
         ws.timers.push(setInterval(klinesMock(ws), 25000));
+        ws.timers.push(setInterval(ordersMock(ws), 5000));
+        
     }
     closeConnection() {
         console.log('Ranger: connection closed');
@@ -312,7 +371,7 @@ class RangerMock {
 
     }
     subscribe(ws, streams) {
-        // console.log("streams: ".magenta, streams);
+        console.log("streams: ".magenta, streams);
         let marketId = customRanger.getMarketId(streams);
         ws.streams = Helpers.unique(ws.streams.concat(streams));
         // console.log("subcribed to ws.streams: ".magenta, marketId, ws.streams);
@@ -320,6 +379,10 @@ class RangerMock {
         // this.markets.forEach((name) => {
         // let { marketId } = Helpers.getMarketInfos(name);
         orderBookSnapshotMock(ws, marketId)();
+        // ordersMock(ws);
+        //-----my orders ------//
+        ordersMock(ws)();
+
         // });
         ws.send(JSON.stringify({ "success": { "message": "subscribed", "streams": ws.streams } }))
     }

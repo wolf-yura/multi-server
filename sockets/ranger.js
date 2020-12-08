@@ -337,7 +337,8 @@ class RangerMock {
         // ws.timers.push(setInterval(orderBookUpdateMock(ws), 2000));
         // ws.timers.push(setInterval(matchedTradesMock(ws), 1000));
         ws.timers.push(setInterval(klinesMock(ws), 25000));
-        ws.timers.push(setInterval(ordersMock(ws), 5000));
+        ws.timers.push(setInterval(ordersMock(ws), 3000));
+        ws.timers.push(setInterval(orderBookSnapshotMock(ws),7000));
         
     }
     closeConnection(ws) {

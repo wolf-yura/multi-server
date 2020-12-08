@@ -134,28 +134,30 @@ const customRanger = {
         return chartData;
     },
     getOrderBook: async function (marketId) {
-        console.log("marketId: ", marketId);
-        let pair = await Market.findOne({$or: [{id: marketId}, {pair_id: marketId}]});
-        // console.log(pair);
-        if (!pair) return {asks: [], bids: []};       
-        let base_contract= pair.base_unit==="bnb"?"0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee":pair.base_contract;
-        let quote_contract = pair.quote_unit==="bnb"?"0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee":pair.quote_contract;         
-        let askOrders = await Order.find({inputToken: base_contract, outputToken: quote_contract}).sort({createdAt: -1}).limit(25);
-        let bidOrders = await Order.find({inputToken: quote_contract, outputToken: base_contract}).sort({createdAt: -1}).limit(25);
-        
+        // console.log("marketId: ", marketId);        
         let asks = []; let bids = [];
-        for (let i = 0; i < askOrders.length; i++) {
-            let inputAmount = k_functions.big_to_float(askOrders[i].inputAmount);
-            let minReturn = k_functions.big_to_float(askOrders[i].minReturn);
-            let price = parseFloat((minReturn / inputAmount).toFixed(6));
-            asks.push([price, inputAmount]);
+        let allBuyOrdersByMarket = await Order.find({market:marketId, status:"open", side: "buy"}).sort({price: -1}).limit(25);
+        let allSellOrdersByMarket = await Order.find({market:marketId, status:"open", side: "sell"}).sort({price: -1}).limit(25);
+        console.log("market: ", marketId, "order books: buy=", allBuyOrdersByMarket.length, "sell=", allSellOrdersByMarket.length);
+        for(let i=0;i<allBuyOrdersByMarket.length; i++)
+        {
+            bids.push([allBuyOrdersByMarket[i].price,  k_functions.big_to_float(allBuyOrdersByMarket[i].inputAmount) ]);
         }
-        for (let j = 0; j < bidOrders.length; j++) {
-            let inputAmount = k_functions.big_to_float(bidOrders[j].inputAmount);
-            let minReturn = k_functions.big_to_float(bidOrders[j].minReturn);
-            let price = parseFloat((inputAmount / minReturn).toFixed(6));
-            bids.push([price, inputAmount]);
-        }
+        for(let i=0;i<allSellOrdersByMarket.length; i++)
+        {
+            asks.push([allSellOrdersByMarket[i].price,  k_functions.big_to_float(allSellOrdersByMarket[i].inputAmount) ]);        }
+        // for (let i = 0; i < askOrders.length; i++) {
+        //     let inputAmount = k_functions.big_to_float(askOrders[i].inputAmount);
+        //     let minReturn = k_functions.big_to_float(askOrders[i].minReturn);
+        //     let price = parseFloat((minReturn / inputAmount).toFixed(6));
+        //     asks.push([price, inputAmount]);
+        // }
+        // for (let j = 0; j < bidOrders.length; j++) {
+        //     let inputAmount = k_functions.big_to_float(bidOrders[j].inputAmount);
+        //     let minReturn = k_functions.big_to_float(bidOrders[j].minReturn);
+        //     let price = parseFloat((inputAmount / minReturn).toFixed(6));
+        //     bids.push([price, inputAmount]);
+        // }
         return {asks: asks, bids: bids};
     },    
     // 

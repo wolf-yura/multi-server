@@ -1,6 +1,8 @@
 const colors = require('colors');
 let BigNumber = require('big-number');
 const { parseUnits } = require('ethers/lib/utils');
+// const { getMarketIdFromOrder } = require('../utils');
+const Helpers = require('./helpers');
 const k_functions = require('./k_functions')();
 const Ticker = require('../models/Ticker').Ticker;
 const Trade = require('../models/Trade').Trade;
@@ -134,9 +136,13 @@ const customRanger = {
     getOrderBook: async function (marketId) {
         console.log("marketId: ", marketId);
         let pair = await Market.findOne({$or: [{id: marketId}, {pair_id: marketId}]});
-        if (!pair) return {asks: [], bids: []};
-        let askOrders = await Order.find({inputToken: pair.base_contract, outputToken: pair.quote_contract}).sort({createdAt: -1}).limit(25);
-        let bidOrders = await Order.find({inputToken: pair.quote_contract, outputToken: pair.base_contract}).sort({createdAt: -1}).limit(25);
+        // console.log(pair);
+        if (!pair) return {asks: [], bids: []};       
+        let base_contract= pair.base_unit==="bnb"?"0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee":pair.base_contract;
+        let quote_contract = pair.quote_unit==="bnb"?"0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee":pair.quote_contract;         
+        let askOrders = await Order.find({inputToken: base_contract, outputToken: quote_contract}).sort({createdAt: -1}).limit(25);
+        let bidOrders = await Order.find({inputToken: quote_contract, outputToken: base_contract}).sort({createdAt: -1}).limit(25);
+        
         let asks = []; let bids = [];
         for (let i = 0; i < askOrders.length; i++) {
             let inputAmount = k_functions.big_to_float(askOrders[i].inputAmount);
@@ -151,27 +157,11 @@ const customRanger = {
             bids.push([price, inputAmount]);
         }
         return {asks: asks, bids: bids};
-    },
+    },    
     // 
     getMyOrders: async function (ownerAddress, marketId) {
-        console.log("--- owner address: ", ownerAddress);          
-        console.log("--- market id ", marketId)      ;
-        let pair = await Market.findOne({$or: [{id: marketId}, {pair_id: marketId}]});
-        let base_contract = pair.base_contract;
-        let quote_contract = pair.quote_contract;
 
-        if(base_contract == "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c")
-           base_contract =  "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
-        if(quote_contract == "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c")
-            quote_contract =  "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
-        
-        console.log(base_contract, quote_contract);
-
-        // let myOrderAll = await Order.find({ owner: ownerAddress, $or: [
-        //        { inputToken: base_contract, outputToken: quote_contract  },
-        //        { outputToken: base_contract, inputToken: quote_contract  } ]
-        //      }).limit(500);
-
+        console.log("--- owner address: ", ownerAddress);  
         let myOrderAll = await Order.find({ owner: ownerAddress }).limit(500);
 
         let myOrderOpen = [];
@@ -183,19 +173,7 @@ const customRanger = {
             let minReturn = k_functions.big_to_float(myOrderAll[i].minReturn);
             let price = parseFloat((minReturn / inputAmount).toFixed(6));
             // const side = myOrderAll[i].inputToken == pair.base_contract? "buy" : "sell";
-            let remaining_volume = 0;
-            let inputToken = myOrderAll[i].inputToken;
-            let outputToken = myOrderAll[i].outputToken;
-            if(inputToken == "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee")
-                inputToken =  "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c";
-            if(outputToken == "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee")
-                outputToken =  "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c";        
-            // console.log(inputToken, outputToken);
-            const market = await Market.findOne( {$or: [ { quote_contract: inputToken, base_contract:outputToken }, { base_contract: inputToken, quote_contract:outputToken  } ]});
-            
-            const side = inputToken == market.base_contract? "buy" : "sell";
-            if(side =="sell")
-                price = 1.0/ price;
+            let remaining_volume = 0;    
 
             let state = "done";
             if(myOrderAll[i].status ==="open")
@@ -205,18 +183,17 @@ const customRanger = {
               }
             else if(myOrderAll[i].status ==="cancelled")
               state = "cancel";
-            const market_id= market.id;
-            // console.log(market_id);
+
             const orderData={
                 state:state , 
                 volume: inputAmount,
-                price: price, 
+                price: myOrderAll[i].price, 
                 id: myOrderAll[i].id, 
                 remaining_volume: remaining_volume, 
                 origin_volume: inputAmount, 
-                market: escape(market.id), 
-                at: myOrderAll[i].createdAt,
-                side : side,
+                market: myOrderAll[i].market, 
+                updated_at: myOrderAll[i].updatedAt,
+                side : myOrderAll[i].side,
                 // pair : market.id
                 };
             

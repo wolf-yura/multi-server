@@ -3,6 +3,8 @@ const Schema = mongoose.Schema;
 
 let OrderSchema = new Schema({
     id: String,  // '0x8a4fc7924189678a0caa9a85bd9e927467ac73fbc84972cfab40afc295ea03ad',
+    market:String, // 'julbbnb'
+    price: String, // 1.23
     inputAmount: String,  // '20667310718197501589',
     inputToken: String,  // '0x32dffc3fe8e3ef3571bf8a72c0d0015c5373f41d',
     minReturn: String,  // '1013103466578308901421',
@@ -14,7 +16,12 @@ let OrderSchema = new Schema({
     witness: String,  // '0xf05677f7c568e73b57f4e7485509308c1dbb3530',
     bought: String,
     createdAt: Number,  // '1606338157',
+    updatedAt: Number,
+    blockNumber: Number,
     createdTxHash: String, // '0x12a84d6039e6ba8f6bddea26ce1ef22fbbb3ff5c5b817062fc3618987ffd0883',
+    cancelledTxHash: String,
+    executedTxHash: String,
+    side: String, // "buy" or "sell"
 });
 
 module.exports.Order = mongoose.model('orders', OrderSchema);

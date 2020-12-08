@@ -1,5 +1,6 @@
 let Function = require('./FunctionController');
 let BaseController = require('./BaseController');
+const Helpers = require('../sockets/helpers');
 let Market = require('../models/Market').Market;
 let Order = require('../models/Order').Order;
 let Trade = require('../models/Trade').Trade;
@@ -9,6 +10,7 @@ let M60Trade = require('../models/M60Trade').M60Trade;
 let M120Trade = require('../models/M120Trade').M120Trade;
 let M240Trade = require('../models/M240Trade').M240Trade;
 let Ticker = require('../models/Ticker').Ticker;
+const k_functions = require('../sockets/k_functions')();
 
 let stop_timestamp = 1514764800;  // 2018-01-01
 module.exports = BaseController.extend({
@@ -193,8 +195,9 @@ module.exports = BaseController.extend({
         }
     },
     cron_trade: async function () {
+        console.log("---cron trade");
         let checkTime = parseInt(Date.now() / 1000);
-        let tradeHistory = await Trade.find({}).sort({created_at: 1});  // accent time
+        let tradeHistory = await Trade.find({}).sort({created_at: 1}).limit(1);  // accent time        
         if (tradeHistory && tradeHistory.length) checkTime = tradeHistory[0].created_at;
         console.log("CheckTime: ".red, checkTime);
         if (checkTime < stop_timestamp) {
@@ -210,8 +213,8 @@ module.exports = BaseController.extend({
     },
     live_trade: async function () {
         let checkTime = parseInt(Date.now() / 1000);
-        let tradeHistory = await Trade.find({}).sort({created_at: -1});  // decent time
-        if (tradeHistory && tradeHistory.length) checkTime = tradeHistory[0].created_at;
+        let tradeHistory = await Trade.find({}).sort({created_at: -1}).limit(1);  // decent time
+        if (tradeHistory  && tradeHistory.length>0) checkTime = tradeHistory[0].created_at;
         let currentTime = parseInt(Date.now() / 1000);
         let markets = await Market.find({});
         let pairs = [];
@@ -222,7 +225,7 @@ module.exports = BaseController.extend({
     },
     cron_chart_15m: async function () {
         let period = 15;
-        let all_trades = await Trade.find({}).sort({created_at: 1});  // accent
+        let all_trades = await Trade.find({}).sort({created_at: 1}).limit(1);  // accent
         let firstItem = all_trades[0];
         let time_from = firstItem.created_at;
         let time_to = parseInt(new Date(firstItem.created_at * 1000).setMinutes(new Date(firstItem.created_at * 1000).getMinutes() + period) / 1000);
@@ -256,7 +259,7 @@ module.exports = BaseController.extend({
     },
     cron_chart_30m: async function () {
         let period = 30;
-        let all_trades = await Trade.find({}).sort({created_at: 1});  // accent
+        let all_trades = await Trade.find({}).sort({created_at: 1}).limit(1);  // accent
         let firstItem = all_trades[0];
         let time_from = firstItem.created_at;
         let time_to = parseInt(new Date(firstItem.created_at * 1000).setMinutes(new Date(firstItem.created_at * 1000).getMinutes() + period) / 1000);
@@ -324,7 +327,7 @@ module.exports = BaseController.extend({
     },
     cron_chart_120m: async function () {
         let period = 120;
-        let all_trades = await Trade.find({}).sort({created_at: 1});  // accent
+        let all_trades = await Trade.find({}).sort({created_at: 1}).limit(1);  // accent
         let firstItem = all_trades[0];
         let time_from = firstItem.created_at;
         let time_to = parseInt(new Date(firstItem.created_at * 1000).setMinutes(new Date(firstItem.created_at * 1000).getMinutes() + period) / 1000);
@@ -358,7 +361,7 @@ module.exports = BaseController.extend({
     },
     cron_chart_240m: async function () {
         let period = 240;
-        let all_trades = await Trade.find({}).sort({created_at: 1});  // accent
+        let all_trades = await Trade.find({}).sort({created_at: 1}).limit(1);  // accent
         let firstItem = all_trades[0];
         let time_from = firstItem.created_at;
         let time_to = parseInt(new Date(firstItem.created_at * 1000).setMinutes(new Date(firstItem.created_at * 1000).getMinutes() + period) / 1000);
@@ -389,59 +392,78 @@ module.exports = BaseController.extend({
                 periodData.push(trades[j]);
             }
         }
-    },
-    cron_orders: async function () {
-        let time_to = parseInt(Date.now() / 1000);
-        let orders = await Function.k_order_history(time_to);
-        for (let i = 0; i < orders.length; i++) {
-            let orderItem = new Order({
-                id: orders[i].id,
-                inputAmount: orders[i].inputAmount,
-                inputToken: orders[i].inputToken,
-                minReturn: orders[i].minReturn,
-                module: orders[i].module,
-                outputToken: orders[i].outputToken,
-                owner: orders[i].owner,
-                secret: orders[i].secret,
-                status: orders[i].status,
-                witness: orders[i].witness,
-                bought: orders[i].bought,
-                createdAt: parseInt(orders[i].createdAt),
-                createdTxHash: orders[i].createdTxHash,
-            });
-            await orderItem.save();
+    },       
+    //------ do cron job by block number ** made by ruymaster ** -----//
+    cron_order_data: async function (bInit = false) {                
+        let orderHistory = undefined;
+        if(!bInit) orderHistory = await Order.find({}).sort({updatedAt: -1}).limit(1);        
+        let fromAt = 0;
+        // if(orderHistory) orderHistory = orderHistory.sort()
+        if (orderHistory && orderHistory.length>0) {
+            fromAt = orderHistory[0].updatedAt;
         }
-    },
-    live_orders: async function () {
-        let time_to = parseInt(Date.now() / 1000);
-        let time_from = parseInt(new Date("2020-09-25") / 1000);
-        let orderHistory = await Order.find({}).sort({createdAt: -1});
-        if (orderHistory && orderHistory.length) {
-            time_from = orderHistory[0].createdAt;
-        }
-        let orders = await Function.k_order_live(time_from, time_to);
-        console.log(time_from, time_to);
-        console.log("Live Orders: ", orders.length);
-        for (let i = 0; i < orders.length; i++) {
-            let checkOrder = await Order.findOne({id: orders[i].id});
-            if (!checkOrder) {
-                let orderItem = new Order({
-                    id: orders[i].id,
-                    inputAmount: orders[i].inputAmount,
-                    inputToken: orders[i].inputToken,
-                    minReturn: orders[i].minReturn,
-                    module: orders[i].module,
-                    outputToken: orders[i].outputToken,
-                    owner: orders[i].owner,
-                    secret: orders[i].secret,
-                    status: orders[i].status,
-                    witness: orders[i].witness,
-                    bought: orders[i].bought,
-                    createdAt: parseInt(orders[i].createdAt),
-                    createdTxHash: orders[i].createdTxHash,
-                });
-                await orderItem.save();
+        //let orders = await Function.k_order_from_block(fromBlockNumber);
+        let orders = await Function.k_order_history(fromAt);
+        console.log("--from ", fromAt);
+        if(orders)
+        {
+            console.log("Live Orders: ", orders.length);
+            for (let i = 0; i < orders.length; i++) {
+                let checkOrder = await Order.findOneAndUpdate({id: orders[i].id }, {
+                                    $set:{ updatedAt: orders[i].updatedAt, 
+                                        status: orders[i].status,
+                                        cancelledTxHash:orders[i].cancelledTxHash,
+                                        executedTxHash: orders[i].executedTxHash,
+                                        }});            
+                if (!checkOrder) {
+                    // const marketId = await Helpers.getMarketIdFromOrder(checkOrder);
+                    const newOrder = await this.add_order(orders[i])                
+                }
+                else
+                {
+                    console.log(checkOrder.id, checkOrder.status, checkOrder.blockNumber);
+                    checkOrder.status = orders[i].status;
+                    checkOrder.createdAt = orders[i].createdAt;
+                    await checkOrder.save();
+                }
             }
         }
+        
     },
+    add_order: async function (newOrder) {
+        const {marketId, orderSide }= await Helpers.getMarketIdFromOrder(newOrder);
+        // let orderSide = "buy";
+        // if(Market.findOne({id: marketId}).quote_contract === newOrder.outputToken)
+        //     orderSide = "sell";
+                
+        let inputAmount = k_functions.big_to_float(newOrder.inputAmount);
+        let minReturn = k_functions.big_to_float(newOrder.minReturn);
+        let price = parseFloat((inputAmount/minReturn ).toFixed(6));
+        if(orderSide==="sell") price = parseFloat((minReturn/ inputAmount ).toFixed(6)); ;
+        //console.log(newOrder);
+        let orderItem = new Order({
+            id: newOrder.id,
+            market: marketId,
+            inputAmount: newOrder.inputAmount,
+            inputToken: newOrder.inputToken,
+            minReturn: newOrder.minReturn,
+            module: newOrder.module,
+            outputToken: newOrder.outputToken,
+            owner: newOrder.owner,
+            secret: newOrder.secret,
+            status: newOrder.status,
+            witness: newOrder.witness,
+            bought: newOrder.bought,
+            createdAt: parseInt(newOrder.createdAt),
+            createdTxHash: newOrder.createdTxHash,
+            updatedAt:parseInt(newOrder.updatedAt),
+            cancelledTxHash: newOrder.cancelledTxHash,
+            executedTxHash: newOrder.executedTxHash,
+            blockNumber: newOrder.blockNumber,
+            side: orderSide,
+            price: price                    
+        });
+        await orderItem.save();
+        return orderItem;
+    }
 });

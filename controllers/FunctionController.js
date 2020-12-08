@@ -240,23 +240,27 @@ module.exports = BaseController.extend({
             return [];
         }
     },
-    k_order_history: async function (time_to) {
+    k_order_history: async function (time_from) {
         const query = `
-          query getOrdersFromBlock($time_to: Int) {
-            orders(first: 200, where: {createdAt_lte: $time_to}, orderBy: createdAt, orderDirection: desc) {
-              id
-              inputToken
-              outputToken
-              minReturn
-              owner
-              secret
-              witness
-              module
-              inputAmount
-              createdTxHash
-              status
-              createdAt
-              bought
+          query getOrdersFromBlock($time_from: Int) {
+            orders(first: 500, where: {updatedAt_gt: $time_from}, orderBy: updatedAt, orderDirection: desc) {
+                id
+                inputToken
+                outputToken
+                minReturn
+                owner
+                secret
+                witness
+                module
+                inputAmount
+                createdTxHash
+                blockNumber
+                cancelledTxHash
+                executedTxHash    
+                status
+                createdAt
+                updatedAt
+                bought
             }
           }`;
         const res = await fetch(relayClient, {
@@ -264,29 +268,33 @@ module.exports = BaseController.extend({
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 query,
-                variables: { time_to: time_to }
+                variables: { time_from: time_from }
             }) // Get some from re-orgs
         });
         const { data } = await res.json();
-        return  data.orders;
+        return  data?data.orders:undefined;
     },
     k_order_live: async function (time_from, time_to) {
         const query = `
           query getOrdersFromBlock($time_from: Int, $time_to: Int) {
-            orders(first: 200, where: {createdAt_gte: $time_from, createdAt_lte: $time_to}, orderBy: createdAt, orderDirection: desc) {
-              id
-              inputToken
-              outputToken
-              minReturn
-              owner
-              secret
-              witness
-              module
-              inputAmount
-              createdTxHash
-              status
-              createdAt
-              bought
+            orders(first: 300, where: {createdAt_gte: $time_from, createdAt_lte: $time_to}, orderBy: createdAt, orderDirection: desc) {
+                id
+                inputToken
+                outputToken
+                minReturn
+                owner
+                secret
+                witness
+                module
+                inputAmount
+                createdTxHash
+                blockNumber
+                cancelledTxHash
+                executedTxHash    
+                status
+                createdAt
+                updatedAt
+                bought
             }
           }`;
         const res = await fetch(relayClient, {
@@ -295,6 +303,40 @@ module.exports = BaseController.extend({
             body: JSON.stringify({
                 query,
                 variables: { time_from: time_from, time_to: time_to }
+            }) // Get some from re-orgs
+        });
+        const { data } = await res.json();
+        return  data.orders;
+    },    
+    k_order_from_block: async function (blockNumber) {
+        const query = `
+          query getOrdersFromBlock($blockNumber: Int) {
+            orders(first: 500, where: {blockNumber_gte: $blockNumber}, orderBy: blockNumber, orderDirection: desc) {
+                id
+                inputToken
+                outputToken
+                minReturn
+                owner
+                secret
+                witness
+                module
+                inputAmount
+                createdTxHash
+                blockNumber
+                cancelledTxHash
+                executedTxHash    
+                status
+                createdAt
+                updatedAt
+                bought
+            }
+          }`;
+        const res = await fetch(relayClient, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                query,
+                variables: { blockNumber: blockNumber}
             }) // Get some from re-orgs
         });
         const { data } = await res.json();

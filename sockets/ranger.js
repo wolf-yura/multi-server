@@ -53,7 +53,7 @@ const ordersMock = (ws) => async () => {
             "private.orders": orders
             };                    
             
-            console.log(`-----sending my orders: ${marketId}`);
+            // console.log(`-----sending my orders: ${marketId}`);
             // const payload = {};
             // payload[`${marketId}.ob-snap`] = {"asks": orders.asks, "bids": orders.bids, "sequence":1};
             ws.send(JSON.stringify(pairOrders));

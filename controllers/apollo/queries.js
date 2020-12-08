@@ -124,12 +124,37 @@ query getOrdersFromBlock($$fromBlock: BigInt, $toBlock: BigInt) {
     module
     inputAmount
     createdTxHash
+    blockNumber
+    cancelledTxHash
+    executedTxHash    
     status
     createdAt
+    updatedAt
   }
 }
 `,
-
+GET_ORDERS_BOOK: `
+query getOrdersFromBlock($$fromBlock: BigInt, $toBlock: BigInt) {
+  orders(first: 2, where:{status:open}, orderBy: createdAt, orderDirection: desc) {
+    id
+    inputToken
+    outputToken
+    minReturn
+    owner
+    secret
+    witness
+    module
+    inputAmount
+    createdTxHash
+    blockNumber
+    cancelledTxHash
+    executedTxHash    
+    status
+    createdAt
+    updatedAt
+  }
+}
+`
 };
 
 module.exports = function () {

@@ -1,3 +1,5 @@
+const Market = require('../models/Market').Market;
+
 const getRandomArbitrary = (min, max, precision) => {
     const randomValue = Math.random() * (max - min) + min;
 
@@ -121,7 +123,44 @@ const Helpers = {
         }
     },
     getStreamsFromUrl: (url) => url.replace("/", "").split(/[&?]stream=/).filter(stream => stream.length > 0),
-    unique: (list) => list.filter((value, index, self) => self.indexOf(value) === index)
+    unique: (list) => list.filter((value, index, self) => self.indexOf(value) === index),    
+    
+    bnbAddress : () =>  "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",    
+    
+    getMarketIdFromOrder: async function(order)
+    {
+        if(!order) return undefined;    
+        if(order.inputToken===this.bnbAddress())
+        {            
+            const  market= await Market.findOne({ $or: [{base_unit:"bnb", quote_contract: order.outputToken }, {quote_unit:"bnb", base_contract: order.outputToken}]}); 
+            if(market)           
+            {
+                const orderSide = market.quote_unit==="bnb"? "buy" :"sell";
+                return {marketId: market.id, orderSide: orderSide}
+            }
+            else return{marketId: undefined,orderSide: undefined}
+            // return market? { marketId: market.id, orderSide:""}:undefined;
+        }   
+        else if (order.outputToken===this.bnbAddress())
+        {            
+            const  market= await Market.findOne({ $or: [{base_unit:"bnb", quote_contract: order.inputToken }, {quote_unit:"bnb", base_contract: order.inputToken}]});                     
+            if(market)
+            {
+                const orderSide = market.base_unit==="bnb"? "buy" :"sell";
+                return {marketId: market.id, orderSide: orderSide}
+            }
+            else return{marketId: undefined,orderSide: undefined}
+        } 
+        const market = await Market.findOne( {$or: [ {base_contract: order.inputToken, quote_contract:order.outputToken}, {quote_contract: order.inputToken, base_contract:order.outputToken}]});
+        if(market)
+            {
+                const orderSide = market.quote_contract=== order.inputToken? "buy" :"sell";
+                return {marketId: market.id, orderSide: orderSide}
+            }
+       return{marketId: undefined,orderSide: undefined}
+        // console.log(order.inputToken, order.outputToken);
+        // return market? market.id:undefined;
+    }
 };
 
 module.exports = Helpers;

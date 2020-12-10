@@ -93,7 +93,33 @@ query pairs($tokens: [Bytes]!, $id: String) {
       amount1Out
       amountUSD
       sender
-      to
+      to      
+    }
+  }
+`,
+  MARKET_ORDER_TRANSACTIONS: gql`
+  query( $time_from: Int!) {
+    swaps(first: 1000, where: {timestamp_gte: $time_from}, orderBy: timestamp) {
+      id
+      timestamp
+      pair {
+        id
+        token0 {
+          id
+          symbol
+        }
+        token1 {
+          id
+          symbol
+        }
+      }
+      amount0In
+      amount0Out
+      amount1In
+      amount1Out
+      amountUSD
+      sender
+      to      
     }
   }
 `,
@@ -106,7 +132,7 @@ query pairs($tokens: [Bytes]!, $id: String) {
       amount0Out
       amount1In
       amount1Out
-      amountUSD
+      amountUSD      
     }
   }
 `,

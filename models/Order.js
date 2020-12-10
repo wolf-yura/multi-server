@@ -22,6 +22,8 @@ let OrderSchema = new Schema({
     cancelledTxHash: String,
     executedTxHash: String,
     side: String, // "buy" or "sell"
+    ord_type: String, //"limit" or "market"
+    amount: Number
 });
 
 module.exports.Order = mongoose.model('orders', OrderSchema);

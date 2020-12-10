@@ -31,9 +31,12 @@ const blockClient = new ApolloClient({
 
 const relayClient = 'https://subgraph.swapliquidity.org/subgraphs/name/swapliquidity/limitorders';
 
+const swapClient = 'https://subgraph.swapliquidity.org/subgraphs/name/swapliquidity/subgraph';
+
 module.exports = {
   client,
   healthClient,
   blockClient,
-  relayClient
+  relayClient,
+  swapClient
 };

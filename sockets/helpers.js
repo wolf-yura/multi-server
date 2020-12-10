@@ -127,7 +127,7 @@ const Helpers = {
     
     bnbAddress : () =>  "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",    
     
-    getMarketIdFromOrder: async function(order)
+    getMarketIdFromLimitOrder: async function(order)
     {
         if(!order) return undefined;    
         if(order.inputToken===this.bnbAddress())
@@ -158,6 +158,20 @@ const Helpers = {
                 return {marketId: market.id, orderSide: orderSide}
             }
        return{marketId: undefined,orderSide: undefined}
+        // console.log(order.inputToken, order.outputToken);
+        // return market? market.id:undefined;
+    }
+    ,
+    getMarketIdFromMarketOrder: async function(order)
+    {
+        if(!order || !order.pair) return {undefined, undefined};
+        const market = await Market.findOne( {pair_id:order.pair.id} );
+        if(market)
+            {
+                const orderSide = order.amount0In==="0"? "buy" :"sell";
+                return {marketId: market.id, orderSide: orderSide}
+            }
+       return{marketId: undefined, orderSide: undefined}
         // console.log(order.inputToken, order.outputToken);
         // return market? market.id:undefined;
     }

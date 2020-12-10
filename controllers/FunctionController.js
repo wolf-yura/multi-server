@@ -1,5 +1,5 @@
 const fetch = require('node-fetch');
-const { client, relayClient } = require('./apollo/client');
+const { client, relayClient, swapClient } = require('./apollo/client');
 const queries = require('./apollo/queries')();
 const colors = require('colors');
 let BaseController = require('./BaseController');
@@ -240,10 +240,10 @@ module.exports = BaseController.extend({
             return [];
         }
     },
-    k_order_history: async function (time_from) {
+    k_limit_order_history: async function (time_from) {
         const query = `
           query getOrdersFromBlock($time_from: Int) {
-            orders(first: 500, where: {updatedAt_gt: $time_from}, orderBy: updatedAt, orderDirection: desc) {
+            orders(first: 500, where: {updatedAt_gt: $time_from}, orderBy: updatedAt) {
                 id
                 inputToken
                 outputToken
@@ -273,6 +273,47 @@ module.exports = BaseController.extend({
         });
         const { data } = await res.json();
         return  data?data.orders:undefined;
+    },
+    k_market_order_history: async function (time_from) {
+        const query = `
+          query getMarketOrdersFromTimestamp($time_from: Int) {
+            swaps(first: 500, where:{timestamp_gte: $time_from}, orderBy: timestamp){                
+                id
+                timestamp
+                pair {
+                    id
+                    token0 {
+                        id
+                        symbol
+                    }
+                    token1 {
+                        id
+                        symbol
+                    }
+                }
+                amount0In
+                amount0Out
+                amount1In
+                amount1Out
+                amountUSD
+                sender
+                to
+                transaction {
+                    id
+                    blockNumber
+                }  
+            }
+          }`;
+        const res = await fetch(swapClient, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                query,
+                variables: { time_from: time_from }
+            }) // Get some from re-orgs
+        });
+        const { data } = await res.json();
+        return  data?data.swaps:[];
     },
     k_order_live: async function (time_from, time_to) {
         const query = `

@@ -1,7 +1,6 @@
 const colors = require('colors');
 let BigNumber = require('big-number');
 const { parseUnits } = require('ethers/lib/utils');
-// const { getMarketIdFromOrder } = require('../utils');
 const Helpers = require('./helpers');
 const k_functions = require('./k_functions')();
 const Ticker = require('../models/Ticker').Ticker;
@@ -137,15 +136,15 @@ const customRanger = {
         // console.log("marketId: ", marketId);        
         let asks = []; let bids = [];
         let allBuyOrdersByMarket = await Order.find({market:marketId, status:"open", side: "buy"}).sort({price: -1}).limit(25);
-        let allSellOrdersByMarket = await Order.find({market:marketId, status:"open", side: "sell"}).sort({price: -1}).limit(25);
+        let allSellOrdersByMarket = await Order.find({market:marketId, status:"open", side: "sell"}).sort({price: 1}).limit(25);
         console.log("market: ", marketId, "order books: buy=", allBuyOrdersByMarket.length, "sell=", allSellOrdersByMarket.length);
         for(let i=0;i<allBuyOrdersByMarket.length; i++)
         {
-            bids.push([allBuyOrdersByMarket[i].price,  k_functions.big_to_float(allBuyOrdersByMarket[i].inputAmount) ]);
+            bids.push([allBuyOrdersByMarket[i].price, allBuyOrdersByMarket[i].amount ]);
         }
         for(let i=0;i<allSellOrdersByMarket.length; i++)
         {
-            asks.push([allSellOrdersByMarket[i].price,  k_functions.big_to_float(allSellOrdersByMarket[i].inputAmount) ]);        }
+            asks.push([allSellOrdersByMarket[i].price,  allSellOrdersByMarket[i].amount ]);        }
         // for (let i = 0; i < askOrders.length; i++) {
         //     let inputAmount = k_functions.big_to_float(askOrders[i].inputAmount);
         //     let minReturn = k_functions.big_to_float(askOrders[i].minReturn);
@@ -164,52 +163,56 @@ const customRanger = {
     getMyOrders: async function (ownerAddress, marketId) {
 
         console.log("--- owner address: ", ownerAddress);  
-        let myOrderAll = await Order.find({ owner: ownerAddress }).limit(500);
-
-        let myOrderOpen = [];
+        let myOrderAll = await Order.find({ owner: ownerAddress }).sort({updatedAt : -1}).limit(500);
+        
+        // let myOrderOpen = [];
         let myOrderHistory = [];
-        console.log("myorder count", myOrderAll.length)
-
+        // console.log("myorder count", myOrderAll.length)
+        // console.log(myOrderAll);
         for (let i = 0; i < myOrderAll.length; i++) {                                 
-            let inputAmount = k_functions.big_to_float(myOrderAll[i].inputAmount);
-            let minReturn = k_functions.big_to_float(myOrderAll[i].minReturn);
-            let price = parseFloat((minReturn / inputAmount).toFixed(6));
+            // let inputAmount = k_functions.big_to_float(myOrderAll[i].inputAmount);
+            // let minReturn = k_functions.big_to_float(myOrderAll[i].minReturn);
+            // let price = parseFloat((minReturn / inputAmount).toFixed(6));                        
             // const side = myOrderAll[i].inputToken == pair.base_contract? "buy" : "sell";
+            let amount = myOrderAll[i].amount;
             let remaining_volume = 0;    
 
             let state = "done";
             if(myOrderAll[i].status ==="open")
               {
                   state = "wait"             
-                  remaining_volume= inputAmount; 
+                  remaining_volume= amount; 
               }
             else if(myOrderAll[i].status ==="cancelled")
               state = "cancel";
 
             const orderData={
                 state:state , 
-                volume: inputAmount,
+                volume: amount,
                 price: myOrderAll[i].price, 
                 id: myOrderAll[i].id, 
                 remaining_volume: remaining_volume, 
-                origin_volume: inputAmount, 
+                origin_volume: amount, 
                 market: myOrderAll[i].market, 
                 updated_at: myOrderAll[i].updatedAt,
+                created_at: myOrderAll[i].createdAt,
                 side : myOrderAll[i].side,
+                tx_hash: myOrderAll[i].createdTxHash,
+                ord_type: myOrderAll[i].ord_type
                 // pair : market.id
                 };
             
 
             if(myOrderAll[i].status==="executed" || myOrderAll[i].status === "cancelled")
             {
-                orderData.excuted_vloume= inputAmount; 
+                orderData.excuted_vloume= amount; 
             }
-            if( myOrderAll[i].status==="open")
-                myOrderOpen.push(orderData);
-            else
-                myOrderHistory.push(orderData);
+            // if( myOrderAll[i].status==="open")
+            //     myOrderOpen.push(orderData);
+            // else
+            myOrderHistory.push(orderData);
         }        
-        return {myOrderOpen: myOrderOpen, myOrderHistory: myOrderHistory};
+        return myOrderHistory;
     },
 };
 

@@ -19,7 +19,18 @@ const k_functions = {
         if (a.price > b.price) return 1;
         return 0;
     },
-    big_to_float: function (bigString) {  // 18 float point
+    big_to_float: function (bigString) {  // 18 float point for all tokens
+        let point = 18;
+        if (bigString.length > 18) {
+            let newBigStr = bigString.substr(0, bigString.length - point) + "." + bigString.substr(bigString.length - point);
+            return parseFloat(newBigStr);
+        } else {
+            let zeroStr = "00000000000000000";
+            let newBigStr = "0." + zeroStr.substr(0, point - bigString.length) + bigString;
+            return parseFloat(newBigStr);
+        }
+    },
+    big_to_float_by_token: function (bigString, tokenAddress) {  // 18 float point for all tokens
         let point = 18;
         if (bigString.length > 18) {
             let newBigStr = bigString.substr(0, bigString.length - point) + "." + bigString.substr(bigString.length - point);

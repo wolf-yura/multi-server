@@ -1,6 +1,7 @@
 let Function = require('./FunctionController');
 let BaseController = require('./BaseController');
 const Helpers = require('../sockets/helpers');
+const { min } = require('underscore');
 let Market = require('../models/Market').Market;
 let Order = require('../models/Order').Order;
 let Trade = require('../models/Trade').Trade;
@@ -396,18 +397,18 @@ module.exports = BaseController.extend({
     //------ do cron job by block number ** made by ruymaster ** -----//
     cron_order_data: async function (bInit = false) {                
         let orderHistory = undefined;
-        if(!bInit) orderHistory = await Order.find({}).sort({updatedAt: -1}).limit(1);        
-        let fromAt = 0;
+        if(!bInit) orderHistory = await Order.find({ord_type:"limit"}).sort({updatedAt: -1}).limit(1);        
+        let limitOrdersFromAt = 0;
         // if(orderHistory) orderHistory = orderHistory.sort()
         if (orderHistory && orderHistory.length>0) {
-            fromAt = orderHistory[0].updatedAt;
+            limitOrdersFromAt = orderHistory[0].updatedAt;
         }
         //let orders = await Function.k_order_from_block(fromBlockNumber);
-        let orders = await Function.k_order_history(fromAt);
-        console.log("--from ", fromAt);
+        let orders = await Function.k_limit_order_history(limitOrdersFromAt);        
+        console.log("--limit orders from ", limitOrdersFromAt);
         if(orders)
         {
-            console.log("Live Orders: ", orders.length);
+            console.log("Lenth : ", orders.length);
             for (let i = 0; i < orders.length; i++) {
                 let checkOrder = await Order.findOneAndUpdate({id: orders[i].id }, {
                                     $set:{ updatedAt: orders[i].updatedAt, 
@@ -416,8 +417,7 @@ module.exports = BaseController.extend({
                                         executedTxHash: orders[i].executedTxHash,
                                         }});            
                 if (!checkOrder) {
-                    // const marketId = await Helpers.getMarketIdFromOrder(checkOrder);
-                    const newOrder = await this.add_order(orders[i])                
+                    const newOrder = await this.add_limit_order(orders[i])                
                 }
                 else
                 {
@@ -428,10 +428,30 @@ module.exports = BaseController.extend({
                 }
             }
         }
+        //---- add  market order ------------//
+        orderHistory = undefined;
+        if(!bInit) orderHistory = await Order.find({ord_type:"market"}).sort({updatedAt: -1}).limit(1);        
+        let marketOrdersFromAt = 0;
+        if (orderHistory && orderHistory.length>0) {
+            marketOrdersFromAt = orderHistory[0].updatedAt;
+        }
+        orders = await Function.k_market_order_history(marketOrdersFromAt);        
+        console.log("--market orders from ", marketOrdersFromAt);
+        if(orders)
+        {
+            console.log("market order Lenth: ", orders.length);
+            for (let i = 0; i < orders.length; i++) {
+                // console.log(orders[i].id)
+                let checkOrder = await Order.findOne({id: orders[i].id });            
+                if (!checkOrder) {
+                    const newOrder = await this.add_market_order(orders[i])                
+                }
+            }
+        }
         
     },
-    add_order: async function (newOrder) {
-        const {marketId, orderSide }= await Helpers.getMarketIdFromOrder(newOrder);
+    add_limit_order: async function (newOrder) {
+        const {marketId, orderSide }= await Helpers.getMarketIdFromLimitOrder(newOrder);
         // let orderSide = "buy";
         // if(Market.findOne({id: marketId}).quote_contract === newOrder.outputToken)
         //     orderSide = "sell";
@@ -439,7 +459,13 @@ module.exports = BaseController.extend({
         let inputAmount = k_functions.big_to_float(newOrder.inputAmount);
         let minReturn = k_functions.big_to_float(newOrder.minReturn);
         let price = parseFloat((inputAmount/minReturn ).toFixed(6));
-        if(orderSide==="sell") price = parseFloat((minReturn/ inputAmount ).toFixed(6)); ;
+        let amount = minReturn;
+        if(orderSide==="sell")
+        {
+             price = parseFloat((minReturn/ inputAmount ).toFixed(6));
+             amount = inputAmount;
+        }
+
         //console.log(newOrder);
         let orderItem = new Order({
             id: newOrder.id,
@@ -461,7 +487,59 @@ module.exports = BaseController.extend({
             executedTxHash: newOrder.executedTxHash,
             blockNumber: newOrder.blockNumber,
             side: orderSide,
-            price: price                    
+            price: price,
+            ord_type: "limit",
+            amount:amount
+        });
+        await orderItem.save();
+        return orderItem;
+    },
+    add_market_order: async function (newOrder) {
+        const {marketId, orderSide }= await Helpers.getMarketIdFromMarketOrder(newOrder);
+        // let orderSide = "buy";
+        // if(Market.findOne({id: marketId}).quote_contract === newOrder.outputToken)
+        //     orderSide = "sell";
+        if(marketId===undefined || orderSide === undefined) return;
+        let price, amount, inputToken, outputToken;
+        if(orderSide === "buy")
+        {
+            price = parseFloat(newOrder.amount1In)/ parseFloat(newOrder.amount0Out);   //  example "julb/bnb" amount0Out: 0.024 julb, amount1In: 0.03 bnb
+            amount = parseFloat(newOrder.amount0Out);      
+            inputToken =  newOrder.pair.token1.id;                     //
+            outputToken =  newOrder.pair.token0.id;                     //
+
+        }
+        else
+        {
+            price = parseFloat(newOrder.amount1Out)/ parseFloat(newOrder.amount0In);   //  example "julb/bnb" amount0Out: 0.0 julb, amount1In: 0.024 bnb
+            amount = parseFloat(newOrder.amount0In);                                                       //
+            inputToken =  newOrder.pair.token0.id;                     //
+            outputToken =  newOrder.pair.token1.id;                     //
+        }         
+         
+        let orderItem = new Order({
+            id: newOrder.id,
+            market: marketId,
+            // inputAmount: newOrder.inputAmount,
+            inputToken: inputToken,
+            // minReturn: newOrder.minReturn,
+            // module: newOrder.module,
+            outputToken: outputToken,
+            owner: newOrder.to,
+            // secret: newOrder.secret,
+            status: "executed",
+            // witness: newOrder.witness,
+            // bought: newOrder.bought,
+            createdAt: parseInt(newOrder.timestamp),
+            createdTxHash: newOrder.transaction.id,
+            updatedAt:parseInt(newOrder.timestamp),
+            // cancelledTxHash: nu,
+            executedTxHash: newOrder.transaction.id,
+            blockNumber: newOrder.transaction.blockNumber,
+            side: orderSide,
+            price: price,
+            ord_type: "market",
+            amount:amount
         });
         await orderItem.save();
         return orderItem;

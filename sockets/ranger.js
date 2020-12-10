@@ -319,7 +319,7 @@ class RangerMock {
     close() {
         this.wss.close();
     }
-     timerList= [];
+    // timerList= [];
     initConnection(ws, request) {
         ws.authenticated = true;
         ws.timers = [];

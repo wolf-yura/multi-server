@@ -144,7 +144,8 @@ const customRanger = {
         }
         for(let i=0;i<allSellOrdersByMarket.length; i++)
         {
-            asks.push([allSellOrdersByMarket[i].price,  allSellOrdersByMarket[i].amount ]);        }
+            asks.push([allSellOrdersByMarket[i].price,  allSellOrdersByMarket[i].amount ]);  
+        }
         // for (let i = 0; i < askOrders.length; i++) {
         //     let inputAmount = k_functions.big_to_float(askOrders[i].inputAmount);
         //     let minReturn = k_functions.big_to_float(askOrders[i].minReturn);
@@ -198,7 +199,12 @@ const customRanger = {
                 created_at: myOrderAll[i].createdAt,
                 side : myOrderAll[i].side,
                 tx_hash: myOrderAll[i].createdTxHash,
-                ord_type: myOrderAll[i].ord_type
+                ord_type: myOrderAll[i].ord_type,
+                module: myOrderAll[i].status ==="open"?myOrderAll[i].module:undefined,
+                witness: myOrderAll[i].status ==="open"?myOrderAll[i].witness:undefined,
+                inputToken :  myOrderAll[i].status ==="open"?myOrderAll[i].inputToken:undefined,
+                outputToken : myOrderAll[i].status ==="open"?myOrderAll[i].outputToken:undefined,
+                minReturn : myOrderAll[i].status ==="open"?myOrderAll[i].minReturn:undefined,
                 // pair : market.id
                 };
             

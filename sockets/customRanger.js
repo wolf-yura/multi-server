@@ -27,13 +27,14 @@ const customRanger = {
         return ownerAddress;
     },
     getKLineParams: function (streams) {
-        let pairAddress = "", period = 15;
+        let pairAddress = "", period = 15, periodStr;
         for (let k = 0; k < streams.length; k++) {
             let item = streams[k];
             if (item.indexOf(".kline-") > -1) {
                 let itemSplits = item.split(".");
                 if (itemSplits.length < 2) break;
                 pairAddress = itemSplits[0];
+                periodStr = itemSplits[1]?itemSplits[1].substring(6):"15m";
                 switch (itemSplits[1]) {
                     case "kline-1m":
                         period = 1;
@@ -74,7 +75,7 @@ const customRanger = {
                 break;
             }
         }
-        return [pairAddress, period];
+        return [pairAddress, period, periodStr];
     },
     getTicker: async function () {
         // console.log(" === getTicker === ".magenta);
@@ -99,17 +100,29 @@ const customRanger = {
         // console.log(" === getChartTrades === ".magenta, pairAddress);
         if (!pairAddress) return [];
         let pair = await Market.findOne({$or: [{id: pairAddress}, {pair_id: pairAddress}]});
-        if (period < 30) period = 20;
+        if (period < 15) period = 15;
         else if (period > 240) period = 240;
         let time_to = parseInt(Date.now() / 1000);
         let time_from = parseInt((Date.now() - 1000 * 60 * period) / 1000);
+
+        /**
+         *  caculate time range chart trades again
+         */
+        time_to = time_to - time_to%(60*period)
+        time_from = time_to - 60*period
         // console.log(pair);
         let data = await Trade.find({pair_id: pair.pair_id, created_at: {$gte: time_from, $lte: time_to}}).sort({created_at: 1});
-        // console.log(time_from, time_to, data.length);
+        let oldData = await Trade.find({pair_id: pair.pair_id, created_at: {$lte: time_from}}).sort({created_at: -1}).limit(0);
+        console.log("--ranger trade data", time_from, time_to, data.length);
+        
         let periodData = [];
         let startIndex = 0;
+        let oldPrice = 0;
         for (let i = 0; i < data.length; i++) {
-            if (data[i].created_at < time_from) break;
+            if (data[i].created_at < time_from) {
+
+                break;
+            }
             if (data[i].created_at >= time_from && data[i].created_at <= time_to) {
                 periodData.push(data[i]);
                 startIndex++;
@@ -129,6 +142,15 @@ const customRanger = {
             chart_item[2] = periodData[periodData.length - 1].price;
             chart_item[3] = periodData[0].price;
             chartData = chart_item;
+
+
+            //------ update old data ----//
+            if(oldData && oldData.length>0)
+            {
+                chart_item[1]= oldData[0].price;
+                if(oldData[0].price > chart_item[2]) chart_item[2] = oldData[0].price;
+                if(oldData[0].price < chart_item[3]) chart_item[3] = oldData[0].price;
+            }
         }
         return chartData;
     },

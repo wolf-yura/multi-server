@@ -4,6 +4,7 @@ let crypto = require('crypto');
 let colors = require('colors');
 
 let BaseController = require('./BaseController');
+const { transcode } = require('buffer');
 let Market = require('../models/Market').Market;
 let Trade = require('../models/Trade').Trade;
 let M15Trade = require('../models/M15Trade').M15Trade;
@@ -57,9 +58,14 @@ module.exports = BaseController.extend({
         let period = parseInt(req.query.period);
         let time_from = parseInt(req.query.time_from);
         let time_to = parseInt(req.query.time_to);
+        
         console.log(period, time_from, time_to);
+        //---------//
+        // time_from = time_from - time_from%(period*60);
+        console.log("---time_from --to",  new Date(time_from*1000), new Date(time_to*1000)); 
+        //---------//
         let trades = await Trade.find({pair_id: pair.pair_id, created_at: {$gte: time_from, $lte: time_to}}).sort({created_at: 1});
-        if (period < 30) period = 20;
+        if (period < 15) period = 15;
         else if (period > 240) period = 240;
         console.log(trades.length, period);
         if (trades.length === 0) {
@@ -68,9 +74,14 @@ module.exports = BaseController.extend({
         }
         let chartData = [];
         let currentPeriod = time_from;
-        let nextPeriod = parseInt(new Date(time_from * 1000).setMinutes(new Date(time_from * 1000).getMinutes() + period) / 1000);
+        let nextPeriod = parseInt(new Date(time_from * 1000).setMinutes(new Date(time_from * 1000).getMinutes() + period) / 1000);                        
+        nextPeriod = currentPeriod;
+        // let nextPeriod = currentPeriod  + period*60;
+        console.log("---trade data--",new Date(trades[trades.length-1].created_at*1000));
+        console.log("--next", nextPeriod,new Date(nextPeriod*1000)) ;
+
         let periodData = [];
-        let periodProcess = function (period_data, p_time) {
+        let periodProcess = function (period_data, p_time, old_item=undefined) {
             if (period_data.length > 0) {
                 let period_item = [1605968100, 0.0, 0.0, 0.0, 0.0, 0.0]; // timestamp, open, high, low, close, volume
                 period_item[0] = p_time;
@@ -93,15 +104,15 @@ module.exports = BaseController.extend({
             if (trades[i].created_at > nextPeriod) {
                 currentPeriod = nextPeriod;
                 let tmp = nextPeriod;
-                nextPeriod = parseInt(new Date(tmp * 1000).setMinutes(new Date(tmp * 1000).getMinutes() + period) / 1000);
+                nextPeriod = parseInt(new Date(tmp * 1000).setMinutes(new Date(tmp * 1000).getMinutes() + period) / 1000);                
                 if (periodData.length > 0) {
-                    // if (printIndex < 2) {
-                    //     console.log("currentPeriod, nextPeriod: ".red, currentPeriod, nextPeriod);
-                    //     console.log("PeriodData: ".red, periodData);
-                    // }
+                        // if (i  > trades.length-10) {
+                        //     console.log("currentPeriod, nextPeriod: ".red, currentPeriod, nextPeriod);
+                        //     console.log("PeriodData: ".red, periodData);
+                        // }
                     let chart_item = periodProcess(periodData, currentPeriod);
-                    // if (printIndex < 3) console.log("ChartItem: ".red, chart_item);
-                    // printIndex++;
+                        // if (printIndex < 3) console.log("ChartItem: ".red, chart_item);
+                        // printIndex++;
                     chartData.push(chart_item);
                 }
                 periodData = [];
@@ -109,10 +120,13 @@ module.exports = BaseController.extend({
             }
             periodData.push(trades[i]);
         }
+        console.log("--final current period", new Date(currentPeriod*1000),new Date(nextPeriod*1000));
         if (periodData.length > 1) {
             let chart_item_final = periodProcess(periodData, currentPeriod);
-            chartData.push(chart_item_final);
+            console.log(chart_item_final);             
+            // chartData.push(chart_item_final);
         }
+        console.log(chartData[chartData.length-1], new Date(1000*chartData[chartData.length-1][0]));
         return res.end(JSON.stringify(chartData));
     },
     api_balance: async function (req, res, next) {

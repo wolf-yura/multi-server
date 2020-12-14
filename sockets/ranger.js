@@ -295,10 +295,11 @@ const matchedTradesMock = (ws) => {
 //     sendEvent(ws, `${marketId}.kline-1w`, kLine(at, 10080));
 // };
 const klinesMock = (ws) => async () => {
-    const [pairAddress, period] = customRanger.getKLineParams(ws.streams);
+    const [pairAddress, period, periodStr] = customRanger.getKLineParams(ws.streams);    
+
     let kLineItem = await customRanger.getChartTrades(pairAddress, period);
-    console.log("kLineItem: ".red, kLineItem);
-    ws.send(JSON.stringify(kLineItem));
+    console.log("kLineItem: ".red, kLineItem, pairAddress, periodStr);
+    ws.send(JSON.stringify({kline: {item: kLineItem, pair: pairAddress, period: periodStr}}));
 };
 class RangerMock {
     constructor(port) {
@@ -329,7 +330,7 @@ class RangerMock {
         console.log(`Ranger: connection accepted, url: ${request.url}`);
         // console.log(request.query.streams);
         this.subscribe(ws, Helpers.getStreamsFromUrl(request.url));
-
+        console.log("----streams", ws.streams);
         // // original
         // // ws.timers.push(setInterval(tickersMock(ws, this.markets), 3000));
         // ws.timers.push(setInterval(balancesMock(ws), 3000));
@@ -347,7 +348,7 @@ class RangerMock {
         // ws.timers.push(setInterval(orderBookIncrementMock(ws), 2000));
         // ws.timers.push(setInterval(orderBookUpdateMock(ws), 2000));
         // ws.timers.push(setInterval(matchedTradesMock(ws), 1000));
-        ws.timers.push(setInterval(klinesMock(ws), 25000));
+        ws.timers.push(setInterval(klinesMock(ws), 5000));
         ws.timers.push(setInterval(ordersMock(ws), 3000));
         ws.timers.push(setInterval(orderBookSnapshotMock(ws),7000));
         
@@ -392,7 +393,7 @@ class RangerMock {
 
     }
     subscribe(ws, streams) {
-        console.log("streams: ".magenta, streams);
+        console.log("subscribed streams: ".magenta, streams);
         let marketId = customRanger.getMarketId(streams);
         ws.streams = Helpers.unique(ws.streams.concat(streams));
         // console.log("subcribed to ws.streams: ".magenta, marketId, ws.streams);
@@ -409,6 +410,8 @@ class RangerMock {
     }
     unsubscribe(ws, streams) {
         ws.streams = ws.streams.filter((value) => streams.indexOf(value) === -1);
+        console.log("unsubscribed streams".yellow, streams);
+        ws.timers.pop()
         ws.send(JSON.stringify({ "success": { "message": "unsubscribed", "streams": ws.streams } }))
     }
 }

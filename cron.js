@@ -19,7 +19,7 @@ mongoose.connect('mongodb://' + config.mongo.host + ':' + config.mongo.port + '/
             let marketCheck = await Market.findOne({});
             if (!marketCheck) await CronController.cron_markets();
             let tickets = await Ticker.findOne({});                
-            if(!tickets) await CronController.cron_tickers();
+            if(!tickets) await CronController.cron_ticker_data();
             let trades = await Trade.findOne({});            
             if(!trades) await CronController.cron_trade();
             // await CronController.cron_chart_15m();
@@ -48,9 +48,10 @@ mongoose.connect('mongodb://' + config.mongo.host + ':' + config.mongo.port + '/
             // });
             setInterval(
                 async function () {  // per 2 minutes
-                    await CronController.cron_tickers();
+                    // await CronController.cron_tickers();
+                     await CronController.cron_ticker_data();
                 },
-                120000
+                30000
             )
             // update order data
             // cron.schedule('*/3 * * * * *', async function () {  // per 5 minutes

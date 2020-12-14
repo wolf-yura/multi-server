@@ -2,6 +2,7 @@ let Function = require('./FunctionController');
 let BaseController = require('./BaseController');
 const Helpers = require('../sockets/helpers');
 const { min } = require('underscore');
+const { argsToArgsConfig } = require('graphql/type/definition');
 let Market = require('../models/Market').Market;
 let Order = require('../models/Order').Order;
 let Trade = require('../models/Trade').Trade;
@@ -136,6 +137,89 @@ module.exports = BaseController.extend({
                 tickerItem.high = data[0].price;
                 tickerItem.low = data[data.length - 1].price;
             }
+            let checkTickerItem = await Ticker.findOne({pair_id: pair_id});
+            if (checkTickerItem) {
+                await checkTickerItem.updateOne({
+                    amount: tickerItem.amount,
+                    low: tickerItem.low,
+                    high: tickerItem.high,
+                    last: tickerItem.last,
+                    open: tickerItem.open,
+                    volume: tickerItem.volume,
+                    avg_price: tickerItem.avg_price,
+                    price_change_percent: tickerItem.price_change_percent,
+                    at: tickerItem.at
+                });
+            } else {
+                let newTickerItem = new Ticker(tickerItem);
+                await newTickerItem.save();
+            }
+        }
+    },
+    //----- updated cron for ticker -----//
+    cron_ticker_data: async function () {        
+        let time_to = parseInt(Date.now() / 1000);
+        let time_24h_old = parseInt(new Date().setDate(new Date().getDate() - 1) / 1000);
+        let time_48h_old = parseInt(new Date().setDate(new Date().getDate() - 2) / 1000);
+                
+        let markets = await Market.find({});
+        for (let i = 0; i < markets.length; i++) {
+            let curMarket = markets[i];
+            let pair_id = markets[i].pair_id;
+            let pair_name = markets[i].id;  // ex: julbbnb
+            console.log("--- pair name ", pair_name);
+            let today_trades = await Trade.find({created_at:{$gte: time_24h_old, $lte: time_to}, market: pair_name}).sort({created_at:1});
+            let yesterday_trades = await Trade.find({created_at:{$gte: time_48h_old, $lte: time_24h_old}, market: pair_name});            
+            let tickerItem = {
+                "pair_id": pair_id,
+                "pair_name": pair_name,
+                "amount": 0.0,
+                "low": 0.0,
+                "high": 0.0,
+                "last": 0.0,
+                "open": 0.0,
+                "volume": 0.0,
+                "avg_price": 0.0,
+                "price_change_percent": "+0.00%",
+                "at": time_to,
+            };
+               
+            let sumPrice = 0;
+            let sumVolume = 0;                            
+            let sumAmount = 0;                        
+            if(today_trades.length>1)
+            {
+                let lowestPrice = 10000000000;
+                for(let ii=0; ii<today_trades.length-1;ii++)
+                {
+                    let trade = today_trades[ii];
+                    sumPrice += trade.price;
+                    sumVolume += (trade.amount*trade.price);
+                    sumAmount += trade.amount;
+                    if(trade.price<lowestPrice)     lowestPrice= trade.price;
+                    if(trade.price>tickerItem.high)    tickerItem.high= trade.price;
+                }                
+                tickerItem.avg_price = sumPrice/today_trades.length;
+                tickerItem.open  = today_trades[0].price;
+                tickerItem.last  = today_trades[today_trades.length-1].price;
+                tickerItem.low   = lowestPrice;
+            }
+            let sumPriceOld = 0, avgPriceOld=0;       
+            if(yesterday_trades.length>1)
+            {                
+                for(let ii=0; ii<yesterday_trades.length-1;ii++)
+                {
+                    let trade = yesterday_trades[ii];
+                    sumPriceOld += trade.price;                   
+                }                
+                avgPriceOld = sumPriceOld/yesterday_trades.length;  
+                tickerItem.price_change_percent = (tickerItem.avg_price / avgPriceOld-1)*100;
+                if (tickerItem.price_change_percent < 0) tickerItem.price_change_percent = tickerItem.price_change_percent.toFixed(2) + "%";
+                else tickerItem.price_change_percent = "+" + tickerItem.price_change_percent.toFixed(2) + "%";                              
+            }
+                        
+            tickerItem.amount = sumAmount;
+            tickerItem.volume = sumVolume;
             let checkTickerItem = await Ticker.findOne({pair_id: pair_id});
             if (checkTickerItem) {
                 await checkTickerItem.updateOne({

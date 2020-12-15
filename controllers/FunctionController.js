@@ -263,16 +263,23 @@ module.exports = BaseController.extend({
                 bought
             }
           }`;
-        const res = await fetch(relayClient, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                query,
-                variables: { time_from: time_from }
-            }) // Get some from re-orgs
-        });
-        const { data } = await res.json();
-        return  data?data.orders:undefined;
+        let retData = undefined;
+        try{
+            const res = await fetch(relayClient, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    query,
+                    variables: { time_from: time_from }
+                }) // Get some from re-orgs
+            });
+         const { data } = await res.json();
+         retData = data;
+        }  
+        catch {
+            console.log("--fetch error-")
+        }        
+        return  retData?retData.orders:undefined;
     },
     k_market_order_history: async function (time_from) {
         const query = `
@@ -304,16 +311,23 @@ module.exports = BaseController.extend({
                 }  
             }
           }`;
-        const res = await fetch(swapClient, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                query,
-                variables: { time_from: time_from }
-            }) // Get some from re-orgs
-        });
-        const { data } = await res.json();
-        return  data?data.swaps:[];
+          let retData=undefined;
+          try{
+            const res = await fetch(swapClient, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    query,
+                    variables: { time_from: time_from }
+                }) // Get some from re-orgs
+            });
+            const { data } = await res.json();
+            retData = data;
+          }
+          catch(err){
+              console.error(err);
+          }        
+        return  retData?retData.swaps:[];
     },
     k_order_live: async function (time_from, time_to) {
         const query = `

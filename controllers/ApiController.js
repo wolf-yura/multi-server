@@ -48,7 +48,8 @@ module.exports = BaseController.extend({
         let cur_t = new Date();
         let cur_ts = parseInt(cur_t.getTime() / 1000);
         let yes_ts = parseInt((cur_t - 1000 * 60 * 60 * 24 * 1) / 1000);
-        let trades = await Trade.find({pair_id: pair.pair_id, created_at: {$gte: yes_ts, $lte: cur_ts}}).select({_id: 0, pair_id: 0}).limit(50);
+        // let trades = await Trade.find({pair_id: pair.pair_id, created_at: {$gte: yes_ts, $lte: cur_ts}}).select({_id: 0, pair_id: 0}).limit(50);
+        let trades = await Trade.find({market: pair.id, created_at: {$gte: yes_ts, $lte: cur_ts}}).select({_id: 0, pair_id: 0}).limit(50);
         return res.end(JSON.stringify(trades))
     },
     api_k_line: async function (req, res, next) {
@@ -64,7 +65,8 @@ module.exports = BaseController.extend({
         // time_from = time_from - time_from%(period*60);
         console.log("---time_from --to",  new Date(time_from*1000), new Date(time_to*1000)); 
         //---------//
-        let trades = await Trade.find({pair_id: pair.pair_id, created_at: {$gte: time_from, $lte: time_to}}).sort({created_at: 1});
+        // let trades = await Trade.find({pair_id: pair.pair_id, created_at: {$gte: time_from, $lte: time_to}}).sort({created_at: 1});
+        let trades = await Trade.find({market: req.params.id, created_at: {$gte: time_from, $lte: time_to}}).sort({created_at: 1});
         if (period < 15) period = 15;
         else if (period > 240) period = 240;
         console.log(trades.length, period);
@@ -74,10 +76,10 @@ module.exports = BaseController.extend({
         }
         let chartData = [];
         let currentPeriod = time_from;
-        let nextPeriod = parseInt(new Date(time_from * 1000).setMinutes(new Date(time_from * 1000).getMinutes() + period) / 1000);                        
-        nextPeriod = currentPeriod;
+        let nextPeriod =  currentPeriod+ period*60; // parseInt(new Date(time_from * 1000).setMinutes(new Date(time_from * 1000).getMinutes() + period) / 1000);                        
+        // nextPeriod = currentPeriod;
         // let nextPeriod = currentPeriod  + period*60;
-        console.log("---trade data--",new Date(trades[trades.length-1].created_at*1000));
+        console.log("---trade data--", trades[trades.length-1].created_at, new Date(trades[trades.length-1].created_at*1000));
         console.log("--next", nextPeriod,new Date(nextPeriod*1000)) ;
 
         let periodData = [];
@@ -102,15 +104,23 @@ module.exports = BaseController.extend({
         for (let i = 0; i < trades.length; i++) {
             // if (printIndex > 2) break;
             if (trades[i].created_at > nextPeriod) {
-                currentPeriod = nextPeriod;
-                let tmp = nextPeriod;
-                nextPeriod = parseInt(new Date(tmp * 1000).setMinutes(new Date(tmp * 1000).getMinutes() + period) / 1000);                
+            // if (trades[i].created_at > currentPeriod) {
+                // currentPeriod = nextPeriod;
+                // let tmp = nextPeriod;
+                // nextPeriod = currentPeriod + 60*period;      //parseInt(new Date(tmp * 1000).setMinutes(new Date(tmp * 1000).getMinutes() + period) / 1000);                
                 if (periodData.length > 0) {
                         // if (i  > trades.length-10) {
                         //     console.log("currentPeriod, nextPeriod: ".red, currentPeriod, nextPeriod);
                         //     console.log("PeriodData: ".red, periodData);
-                        // }
+                        // }                    
+                        
                     let chart_item = periodProcess(periodData, currentPeriod);
+                        //--- update currentPeriod -----//
+                    if(periodData[periodData.length-1].created_at > nextPeriod + period*60)
+                        currentPeriod= periodData[periodData.length-1].created_at - periodData[periodData.length-1].created_at % (period * 60);
+                    else
+                        currentPeriod = currentPeriod + 60*period;
+                    nextPeriod = currentPeriod + 60*period;
                         // if (printIndex < 3) console.log("ChartItem: ".red, chart_item);
                         // printIndex++;
                     chartData.push(chart_item);
@@ -121,12 +131,12 @@ module.exports = BaseController.extend({
             periodData.push(trades[i]);
         }
         console.log("--final current period", new Date(currentPeriod*1000),new Date(nextPeriod*1000));
+        console.log(chartData[chartData.length-1], new Date(1000*chartData[chartData.length-1][0]));
         if (periodData.length > 1) {
             let chart_item_final = periodProcess(periodData, currentPeriod);
             console.log(chart_item_final);             
-            // chartData.push(chart_item_final);
-        }
-        console.log(chartData[chartData.length-1], new Date(1000*chartData[chartData.length-1][0]));
+            chartData.push(chart_item_final);
+        }        
         return res.end(JSON.stringify(chartData));
     },
     api_balance: async function (req, res, next) {

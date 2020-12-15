@@ -3,6 +3,7 @@ let BaseController = require('./BaseController');
 const Helpers = require('../sockets/helpers');
 const { min } = require('underscore');
 const { argsToArgsConfig } = require('graphql/type/definition');
+const { id } = require('ethers/lib/utils');
 let Market = require('../models/Market').Market;
 let Order = require('../models/Order').Order;
 let Trade = require('../models/Trade').Trade;
@@ -158,6 +159,7 @@ module.exports = BaseController.extend({
     },
     //----- updated cron for ticker -----//
     cron_ticker_data: async function () {        
+        console.log("---start cron ticker");
         let time_to = parseInt(Date.now() / 1000);
         let time_24h_old = parseInt(new Date().setDate(new Date().getDate() - 1) / 1000);
         let time_48h_old = parseInt(new Date().setDate(new Date().getDate() - 2) / 1000);
@@ -167,7 +169,7 @@ module.exports = BaseController.extend({
             let curMarket = markets[i];
             let pair_id = markets[i].pair_id;
             let pair_name = markets[i].id;  // ex: julbbnb
-            console.log("--- pair name ", pair_name);
+            // console.log("--- pair name ", pair_name);
             let today_trades = await Trade.find({created_at:{$gte: time_24h_old, $lte: time_to}, market: pair_name}).sort({created_at:1});
             let yesterday_trades = await Trade.find({created_at:{$gte: time_48h_old, $lte: time_24h_old}, market: pair_name});            
             let tickerItem = {
@@ -482,7 +484,7 @@ module.exports = BaseController.extend({
     cron_order_data: async function (bInit = false) {                
         let orderHistory = undefined;
         if(!bInit) orderHistory = await Order.find({ord_type:"limit"}).sort({updatedAt: -1}).limit(1);        
-        let limitOrdersFromAt = 0;
+        let limitOrdersFromAt = 1000;
         // if(orderHistory) orderHistory = orderHistory.sort()
         if (orderHistory && orderHistory.length>0) {
             limitOrdersFromAt = orderHistory[0].updatedAt;
@@ -494,21 +496,17 @@ module.exports = BaseController.extend({
         {
             console.log("Lenth : ", orders.length);
             for (let i = 0; i < orders.length; i++) {
-                let checkOrder = await Order.findOneAndUpdate({id: orders[i].id }, {
-                                    $set:{ updatedAt: orders[i].updatedAt, 
-                                        status: orders[i].status,
-                                        cancelledTxHash:orders[i].cancelledTxHash,
-                                        executedTxHash: orders[i].executedTxHash,
-                                        }});            
+                let checkOrder = await Order.findOne({id: orders[i].id });            
                 if (!checkOrder) {
-                    const newOrder = await this.add_limit_order(orders[i])                
+                    const newOrder = await this.add_limit_order(orders[i])               
                 }
                 else
                 {
-                    console.log(checkOrder.id, checkOrder.status, checkOrder.blockNumber);
-                    checkOrder.status = orders[i].status;
-                    checkOrder.createdAt = orders[i].createdAt;
-                    await checkOrder.save();
+                    // console.log(checkOrder.id, checkOrder.status, checkOrder.blockNumber);
+                    // checkOrder.status = orders[i].status;
+                    // checkOrder.createdAt = orders[i].createdAt;
+                    // await checkOrder.save();
+                    this.update_limit_order(orders[i], checkOrder);
                 }
             }
         }
@@ -524,15 +522,19 @@ module.exports = BaseController.extend({
         if(orders)
         {
             console.log("market order Lenth: ", orders.length);
-            for (let i = 0; i < orders.length; i++) {
-                // console.log(orders[i].id)
+            for (let i = 0; i < orders.length; i++) {                
                 let checkOrder = await Order.findOne({id: orders[i].id });            
                 if (!checkOrder) {
                     const newOrder = await this.add_market_order(orders[i])                
                 }
+                else
+                {
+                    // this.update_limit_order(orders[i], checkOrder);
+                }
             }
         }
         
+        await this.cron_trade_data();
     },
     add_limit_order: async function (newOrder) {
         const {marketId, orderSide }= await Helpers.getMarketIdFromLimitOrder(newOrder);
@@ -542,13 +544,26 @@ module.exports = BaseController.extend({
                 
         let inputAmount = k_functions.big_to_float(newOrder.inputAmount);
         let minReturn = k_functions.big_to_float(newOrder.minReturn);
-        let price = parseFloat((inputAmount/minReturn ).toFixed(6));
-        let amount = minReturn;
+        let price = parseFloat((inputAmount/minReturn ).toFixed(6));       
+        let amount = minReturn;        
         if(orderSide==="sell")
         {
              price = parseFloat((minReturn/ inputAmount ).toFixed(6));
              amount = inputAmount;
         }
+
+        if(newOrder.bought)
+            {
+                console.log("----bought", newOrder.id);
+                const bought = k_functions.big_to_float(newOrder.bought);
+                price = parseFloat((inputAmount/ bought).toFixed(6));
+                amount = bought;
+                if(orderSide==="sell")
+                {
+                    price = parseFloat((bought/ inputAmount ).toFixed(6));
+                    amount = inputAmount;
+                }        
+            }
 
         //console.log(newOrder);
         let orderItem = new Order({
@@ -577,6 +592,39 @@ module.exports = BaseController.extend({
         });
         await orderItem.save();
         return orderItem;
+    },
+    update_limit_order: async function(newOrder, oldOrder) {
+        
+        let price = oldOrder.price;
+        let amount = oldOrder.amount;        
+        if(newOrder.bought)
+        {
+            console.log("---update bought", oldOrder.id);
+            let inputAmount = k_functions.big_to_float(newOrder.inputAmount);        
+            let bought = k_functions.big_to_float(newOrder.bought);
+            price = parseFloat((inputAmount/bought ).toFixed(6));
+            amount = bought;
+            if(oldOrder.side==="sell")
+            {
+                price = parseFloat((bought/ inputAmount ).toFixed(6));
+                amount = inputAmount;
+            }
+        }
+        oldOrder.updatedAt = newOrder.updatedAt;
+        oldOrder.bought = newOrder.bought;
+        oldOrder.price = price;
+        oldOrder.amount = amount;
+        oldOrder.status = newOrder.status;
+        oldOrder.cancelledTxHash = newOrder.cancelledTxHash;
+        oldOrder.executedTxHash = newOrder.executedTxHash;
+        await oldOrder.save()
+        // await Order.findOneAndUpdate({id: newOrder.id }, {
+        //     $set:{ updatedAt: newOrder.updatedAt, 
+        //         bought: newOrder.bought,
+        //         status: newOrder.status,
+        //         cancelledTxHash:newOrder.cancelledTxHash,
+        //         executedTxHash:newOrder.executedTxHash,
+        //         }}); 
     },
     add_market_order: async function (newOrder) {
         const {marketId, orderSide }= await Helpers.getMarketIdFromMarketOrder(newOrder);
@@ -627,5 +675,52 @@ module.exports = BaseController.extend({
         });
         await orderItem.save();
         return orderItem;
+    },
+    //---- updated cron for trade ** made by ruymaster **------//
+    cron_trade_data: async function() {
+        console.log("--start--trade");
+        let oneOrder = await Order.findOne({status:"executed"});
+        if(!oneOrder) 
+        {
+            console.log("---no order");
+            return;
+        }              
+        let lastTrade=await Trade.find({}).sort({created_at:-1}).limit(1)
+        let fromTime = 0;
+        if(!lastTrade || lastTrade.length<1)
+             {
+                 console.log("--no--trade")                        
+              }  
+              else fromTime = lastTrade[0].created_at;
+
+        let orders =await  Order.find({status:"executed", market:{$exists: true}, updatedAt:{$gte:fromTime}}).sort({updatedAt:1}).limit(1000);
+        if( orders.length<1) 
+        {
+            console.log("no syncing order and trade");
+            return;
+        }
+        console.log("--executed new orders ", orders.length, orders[orders.length-1].updatedAt);
+        for(let i=0; i< orders.length; i++ )
+        {
+            let order = orders[i];
+            trade = await Trade.findOne({id:order.id});
+            if(trade) 
+            {
+                console.log("--ignore order", order.id);
+                continue;
+            }                  
+            let trade_item = {
+              id: order.id,
+              // pair_id: o.pair.id,
+              price: order.price,
+              amount: order.amount,
+              total: order.amount*order.price,
+              market: order.market,
+              created_at: order.updatedAt,
+              taker_type: order.side
+          };
+          let newTradeItem = new Trade(trade_item);
+          await newTradeItem.save();
+        }        
     }
 });

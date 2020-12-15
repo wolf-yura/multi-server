@@ -113,11 +113,11 @@ module.exports = BaseController.extend({
                         //     console.log("currentPeriod, nextPeriod: ".red, currentPeriod, nextPeriod);
                         //     console.log("PeriodData: ".red, periodData);
                         // }                    
-                        
+                    const lastTime = periodData[periodData.length-1].created_at;
                     let chart_item = periodProcess(periodData, currentPeriod);
                         //--- update currentPeriod -----//
-                    if(periodData[periodData.length-1].created_at > nextPeriod + period*60)
-                        currentPeriod= periodData[periodData.length-1].created_at - periodData[periodData.length-1].created_at % (period * 60);
+                    if(lastTime > nextPeriod + period*60)
+                        currentPeriod= lastTime - lastTime % (period * 60);
                     else
                         currentPeriod = currentPeriod + 60*period;
                     nextPeriod = currentPeriod + 60*period;

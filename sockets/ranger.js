@@ -1,6 +1,8 @@
 const WebSocket = require('ws');
 const Helpers = require('./helpers')
 const customRanger = require('./customRanger')();
+const Trade = require('../models/Trade').Trade;
+const Market = require('../models/Market').Market;
 
 const isSubscribed = (streams, routingKey) => {
     for (const i in streams) {
@@ -200,81 +202,54 @@ const kLine = (time, period) => {
 let tradeIndex = 100000;
 let orderIndex = 100;
 
-const matchedTradesMock = (ws) => {
+const matchedTradesMock = (ws) => async () => {
     let marketId = customRanger.getMarketId(ws.streams);
-    let kind = "bid";
+    
     let price = 0.1;
     let volume = 1000;
+    let pair = await Market.findOne({id: marketId});                
+    let trades = await Trade.find({market: pair.id, created_at: {$gt: ws.recent_trades_updated_at}}).select({_id: 0, pair_id: 0}).sort({created_at:1}).limit(10);
+    console.log("recent trades".blue,   trades, ws.recent_trades_updated_at);
+    
+        
+    // const tradeId = tradeIndex++;    
+    // const takerType = Math.random() < 0.5 ? "buy" : "sell";
+    // price += 0.01;
+    // volume += 50;       
+    // let at = parseInt(Date.now() / 1000);
+    // let remainingVolume = volume;
+    // const executedVolume = volume - remainingVolume;
 
-    return function () {
-        const shouldPushOrder = Math.random() < 0.1;
-        const orderId = orderIndex++;
-        const tradeId = tradeIndex++;
-        kind = kind === "bid" ? "ask" : "bid";
-        const takerType = Math.random() < 0.5 ? "buy" : "sell";
-        const orderType = Math.random() < 0.5 ? "limit" : "market";
-        price += 0.01;
-        volume += 50;
-        let bidId = kind === "bid" ? orderId : orderId - 10;
-        let askId = kind === "ask" ? orderId : orderId - 10;
-        let at = parseInt(Date.now() / 1000);
-        let remainingVolume = volume;
-        const executedVolume = volume - remainingVolume;
+    //     const publicTrade = {
+    //     "tid": tradeId,
+    //     "date": at,
+    //     "taker_type": takerType,
+    //     "price": price,
+    //     "amount": volume,
+    //     "total": (volume * price).toFixed(4)
+    // };
 
-        const order = {
-            "uuid": orderId + 1000000,
-            "id": orderId,
-            "at": at + 1,
-            "market": marketId,
-            "kind": kind,
-            "price": price,
-            "avg_price": price,
-            "state": "wait",
-            "remaining_volume": volume,
-            "origin_volume": volume,
-            "executed_volume": executedVolume,
-            "side": takerType,
-            "created_at": at,
-            "updated_at": at + 1,
-            "order_type": orderType,
-            "trades_count": 0
-        };
-
-        const privateTrade = {
-            "uuid": orderId + 1000000,
-            "id": tradeId,
-            "price": price,
-            "total": (volume * price).toFixed(4),
-            "amount": volume,
-            "market": marketId,
-            "at": at + 1,
-            "created_at": at,
-            "taker_type": takerType
-        };
-
-        const publicTrade = {
-            "tid": tradeId,
-            "date": at,
-            "taker_type": takerType,
-            "price": price,
-            "amount": volume,
-            "total": (volume * price).toFixed(4)
-        };
-
-        if (ws.authenticated && shouldPushOrder) {
-            sendEvent(ws, "order", order);
-
-            setTimeout(() => {
-                remainingVolume = volume / (Math.random() + 2);
-                sendEvent(ws, "order", { ...order, "remaining_volume": String(remainingVolume) });
-
-                setTimeout(() => {
-                    sendEvent(ws, "order", { ...order, "state": "done", "remaining_volume": "0.0" });
-                    sendEvent(ws, "trade", privateTrade);
-                }, 10000);
-            }, 5000);
+    // // sendEvent(ws, `${marketId}.trades`, { "trades": [publicTrade] });    
+    
+    if(trades && trades.length>0)
+    {
+        let sendTrades =[];
+        for(let i=0; i<trades.length; i++)
+        {
+            const trade = trades[i];
+            let oneTrade ={
+                "id" : trade.id,
+                "tid": trade.id,
+                "date": trade.created_at,
+                "taker_type": trade.taker_type,
+                "price": trade.price,
+                "amount": trade.amount,
+                "total": trade.total
+            };
+            sendTrades.push(oneTrade);
         }
-        sendEvent(ws, `${marketId}.trades`, { "trades": [publicTrade] });
+        sendEvent(ws, `${marketId}.trades`, { "trades": sendTrades });    
+        ws.recent_trades_updated_at =  trades[trades.length-1].created_at;
     }
 };
 
@@ -299,7 +274,8 @@ const klinesMock = (ws) => async () => {
 
     let kLineItem = await customRanger.getChartTrades(pairAddress, period);
     console.log("kLineItem: ".red, kLineItem, pairAddress, periodStr);
-    ws.send(JSON.stringify({kline: {item: kLineItem, pair: pairAddress, period: periodStr}}));
+    if(kLineItem && kLineItem.length && kLineItem.length>0)
+        ws.send(JSON.stringify({kline: {item: kLineItem, pair: pairAddress, period: periodStr}}));
 };
 class RangerMock {
     constructor(port) {
@@ -327,29 +303,20 @@ class RangerMock {
         ws.streams = [];
         ws.sequences = {};
         ws.order_updated_at = 0;
+        ws.recent_trades_updated_at = parseInt( Date.now()/1000);
         console.log(`Ranger: connection accepted, url: ${request.url}`);
-        // console.log(request.query.streams);
+
         this.subscribe(ws, Helpers.getStreamsFromUrl(request.url));
-        console.log("----streams", ws.streams);
-        // // original
-        // // ws.timers.push(setInterval(tickersMock(ws, this.markets), 3000));
-        // ws.timers.push(setInterval(balancesMock(ws), 3000));
-        // this.markets.forEach((name) => {
-        //     let { baseUnit, quoteUnit, marketId } = Helpers.getMarketInfos(name);
-        //     ws.timers.push(setInterval(orderBookIncrementMock(ws, marketId), 200));
-        //     ws.timers.push(setInterval(orderBookUpdateMock(ws, marketId), 2000));
-        // //   ws.timers.push(setInterval(matchedTradesMock(ws, marketId), 10000));
-        // //   ws.timers.push(setInterval(klinesMock(ws, marketId), 2500));
-        // });
-        // ws.timers.push(setTimeout(() => {sendEvent(ws, "deposit_address", { currency: "xrp", address: "a4E49HU6CTHyYMmsYt3F1ar1q5W89t3hfQ?dt=1" })}, 10000));
+        // console.log("----streams", ws.streams);
+        
         
         ws.timers.push(setInterval(tickersMock(ws), 3000));
         
         // ws.timers.push(setInterval(orderBookIncrementMock(ws), 2000));
         // ws.timers.push(setInterval(orderBookUpdateMock(ws), 2000));
-        // ws.timers.push(setInterval(matchedTradesMock(ws), 1000));
+        ws.timers.push(setInterval(matchedTradesMock(ws), 3000));
         ws.timers.push(setInterval(klinesMock(ws), 5000));
-        ws.timers.push(setInterval(ordersMock(ws), 3000));
+        ws.timers.push(setInterval(ordersMock(ws), 4000));
         ws.timers.push(setInterval(orderBookSnapshotMock(ws),7000));
         
     }

@@ -49,7 +49,7 @@ module.exports = BaseController.extend({
         let cur_ts = parseInt(cur_t.getTime() / 1000);
         let yes_ts = parseInt((cur_t - 1000 * 60 * 60 * 24 * 1) / 1000);
         // let trades = await Trade.find({pair_id: pair.pair_id, created_at: {$gte: yes_ts, $lte: cur_ts}}).select({_id: 0, pair_id: 0}).limit(50);
-        let trades = await Trade.find({market: pair.id, created_at: {$gte: yes_ts, $lte: cur_ts}}).select({_id: 0, pair_id: 0}).limit(50);
+        let trades = await Trade.find({market: pair.id, created_at: {$gte: yes_ts, $lte: cur_ts}}).select({_id: 0, pair_id: 0}).sort({created_at:-1}).limit(50);
         return res.end(JSON.stringify(trades))
     },
     api_k_line: async function (req, res, next) {

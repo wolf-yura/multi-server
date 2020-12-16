@@ -207,30 +207,16 @@ const matchedTradesMock = (ws) => async () => {
     
     let price = 0.1;
     let volume = 1000;
-    let pair = await Market.findOne({id: marketId});                
-    let trades = await Trade.find({market: pair.id, created_at: {$gt: ws.recent_trades_updated_at}}).select({_id: 0, pair_id: 0}).sort({created_at:1}).limit(10);
-    console.log("recent trades".blue,   trades, ws.recent_trades_updated_at);
-    
+    let pair = await Market.findOne({id: marketId});       
+
+    let trades=[];
+    if( ws.recent_trades_id===0)
+        trades = await Trade.find({market: pair.id, created_at: {$gt: ws.recent_trades_updated_at}}).select({ pair_id: 0}).sort({created_at:1}).limit(10);
+    else
+        trades = await Trade.find({market: pair.id, _id: {$gt: ws.recent_trades_id}}).select({ pair_id: 0}).sort({created_at:1}).limit(10);
+
+    console.log("recent trades".blue,   trades, ws.recent_trades_id);  
         
-    // const tradeId = tradeIndex++;    
-    // const takerType = Math.random() < 0.5 ? "buy" : "sell";
-    // price += 0.01;
-    // volume += 50;       
-    // let at = parseInt(Date.now() / 1000);
-    // let remainingVolume = volume;
-    // const executedVolume = volume - remainingVolume;
-
-    //     const publicTrade = {
-    //     "tid": tradeId,
-    //     "date": at,
-    //     "taker_type": takerType,
-    //     "price": price,
-    //     "amount": volume,
-    //     "total": (volume * price).toFixed(4)
-    // };
-
-    // // sendEvent(ws, `${marketId}.trades`, { "trades": [publicTrade] });    
-    
     if(trades && trades.length>0)
     {
         let sendTrades =[];
@@ -238,7 +224,7 @@ const matchedTradesMock = (ws) => async () => {
         {
             const trade = trades[i];
             let oneTrade ={
-                "id" : trade.id,
+                // "id" : trade.id,
                 "tid": trade.id,
                 "date": trade.created_at,
                 "taker_type": trade.taker_type,
@@ -250,6 +236,7 @@ const matchedTradesMock = (ws) => async () => {
         }
         sendEvent(ws, `${marketId}.trades`, { "trades": sendTrades });    
         ws.recent_trades_updated_at =  trades[trades.length-1].created_at;
+        ws.recent_trades_id = trades[trades.length-1]._id;
     }
 };
 
@@ -304,20 +291,21 @@ class RangerMock {
         ws.sequences = {};
         ws.order_updated_at = 0;
         ws.recent_trades_updated_at = parseInt( Date.now()/1000);
+        ws.recent_trades_id = 0;
         console.log(`Ranger: connection accepted, url: ${request.url}`);
 
         this.subscribe(ws, Helpers.getStreamsFromUrl(request.url));
         // console.log("----streams", ws.streams);
         
         
-        ws.timers.push(setInterval(tickersMock(ws), 3000));
+        ws.timers.push(setInterval(tickersMock(ws), 10000));
         
         // ws.timers.push(setInterval(orderBookIncrementMock(ws), 2000));
         // ws.timers.push(setInterval(orderBookUpdateMock(ws), 2000));
-        ws.timers.push(setInterval(matchedTradesMock(ws), 3000));
-        ws.timers.push(setInterval(klinesMock(ws), 5000));
-        ws.timers.push(setInterval(ordersMock(ws), 4000));
-        ws.timers.push(setInterval(orderBookSnapshotMock(ws),7000));
+        ws.timers.push(setInterval(matchedTradesMock(ws), 3000));    ///== ranger for recent trades    
+        ws.timers.push(setInterval(klinesMock(ws), 5000));           ///== ranger for chart
+        ws.timers.push(setInterval(ordersMock(ws), 4000));           ///== ranger for my order
+        ws.timers.push(setInterval(orderBookSnapshotMock(ws),7000)); ///== ranger for order book
         
     }
     closeConnection(ws) {
@@ -363,6 +351,10 @@ class RangerMock {
         console.log("subscribed streams: ".magenta, streams);
         let marketId = customRanger.getMarketId(streams);
         ws.streams = Helpers.unique(ws.streams.concat(streams));
+        //----- initialize variable -----//
+        ws.order_updated_at = 0;
+        ws.recent_trades_updated_at = parseInt( Date.now()/1000);
+        ws.recent_trades_id = 0;
         // console.log("subcribed to ws.streams: ".magenta, marketId, ws.streams);
         // orderBookSnapshotMock(ws, marketId)();
         // this.markets.forEach((name) => {

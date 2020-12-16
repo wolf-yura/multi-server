@@ -112,28 +112,20 @@ const customRanger = {
         time_to = time_from + 60*period
         // console.log(pair);
         let data = await Trade.find({market: pair.id, created_at: {$gte: time_from, $lte: time_to}}).sort({created_at: 1});
+        if(data.length<1) return undefined
         let oldData = await Trade.find({market: pair.id, created_at: {$lte: time_from}}).sort({created_at: -1}).limit(0);
         console.log("--ranger trade data", time_from, time_to, data.length);
         
         let periodData = [];
-        let startIndex = 0;
-        let oldPrice = 0;
-        for (let i = 0; i < data.length; i++) {
-            if (data[i].created_at < time_from) {
-                break;
-            }
-            if (data[i].created_at >= time_from && data[i].created_at <= time_to) {
-                periodData.push(data[i]);
-                startIndex++;
-            }
-        }
-        if (data.length > (startIndex + 1)) periodData.push(data[startIndex]);
+        if(oldData && oldData.length>0) periodData.push(oldData[0], ...data);       
+    
+        console.log("--update chart", periodData);
         let chartData = [];
         if (periodData.length > 0) {
             let chart_item = [1605968100, 0.0, 0.0, 0.0, 0.0, 0.0]; // timestamp, open, high, low, close, volume
             chart_item[0] = time_from;
-            chart_item[1] = periodData[periodData.length - 1].price;
-            chart_item[4] = periodData[0].price;
+            chart_item[1] = periodData[0].price;
+            chart_item[4] = periodData[periodData.length-1].price;
             for (let j = 0; j < periodData.length; j++) {
                 chart_item[5] += periodData[j].amount;
             }
@@ -143,12 +135,12 @@ const customRanger = {
             chartData = chart_item;
 
             //------ update old data ----//
-            if(oldData && oldData.length>0)
-            {
-                chart_item[1]= oldData[0].price;
-                if(oldData[0].price > chart_item[2]) chart_item[2] = oldData[0].price;
-                if(oldData[0].price < chart_item[3]) chart_item[3] = oldData[0].price;
-            }
+            // if(oldData && oldData.length>0)
+            // {
+            //     chart_item[1]= oldData[0].price;
+            //     if(oldData[0].price > chart_item[2]) chart_item[2] = oldData[0].price;
+            //     if(oldData[0].price < chart_item[3]) chart_item[3] = oldData[0].price;
+            // }
         }
         else{
             let chart_item = [1605968100, 0.0, 0.0, 0.0, 0.0, 0.0]; 

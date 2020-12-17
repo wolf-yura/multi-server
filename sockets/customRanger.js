@@ -10,7 +10,7 @@ const Order = require('../models/Order').Order;
 
 const customRanger = {
     getMarketId: function (streams) {
-        console.log(streams)
+        // console.log(streams)
         let marketID = "";
         for (let k = 0; k < streams.length; k++) {
             let item = streams[k];
@@ -114,12 +114,12 @@ const customRanger = {
         let data = await Trade.find({market: pair.id, created_at: {$gte: time_from, $lte: time_to}}).sort({created_at: 1});
         if(data.length<1) return undefined
         let oldData = await Trade.find({market: pair.id, created_at: {$lte: time_from}}).sort({created_at: -1}).limit(0);
-        console.log("--ranger trade data", time_from, time_to, data.length);
+        // console.log("--ranger trade data", time_from, time_to, data.length);
         
         let periodData = [];
         if(oldData && oldData.length>0) periodData.push(oldData[0], ...data);       
     
-        console.log("--update chart", periodData);
+        // console.log("--update chart", periodData);
         let chartData = [];
         if (periodData.length > 0) {
             let chart_item = [1605968100, 0.0, 0.0, 0.0, 0.0, 0.0]; // timestamp, open, high, low, close, volume
@@ -160,7 +160,7 @@ const customRanger = {
         let asks = []; let bids = [];
         let allBuyOrdersByMarket = await Order.find({market:marketId, status:"open", side: "buy"}).sort({price: -1}).limit(25);
         let allSellOrdersByMarket = await Order.find({market:marketId, status:"open", side: "sell"}).sort({price: 1}).limit(25);
-        console.log("market: ", marketId, "order books: buy=", allBuyOrdersByMarket.length, "sell=", allSellOrdersByMarket.length);
+        // console.log("market: ", marketId, "order books: buy=", allBuyOrdersByMarket.length, "sell=", allSellOrdersByMarket.length);
         for(let i=0;i<allBuyOrdersByMarket.length; i++)
         {
             bids.push([allBuyOrdersByMarket[i].price, allBuyOrdersByMarket[i].amount ]);
@@ -186,7 +186,7 @@ const customRanger = {
     // 
     getMyOrders: async function (ownerAddress, marketId) {
 
-        console.log("--- owner address: ", ownerAddress);  
+        // console.log("--- owner address: ", ownerAddress);  
         let myOrderAll = await Order.find({ owner: ownerAddress }).sort({updatedAt : -1}).limit(500);
         
         // let myOrderOpen = [];

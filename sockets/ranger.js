@@ -103,11 +103,11 @@ const orderBookSnapshotMock = (ws) => async () => {
     // }
     let marketId = customRanger.getMarketId(ws.streams);
     ws.sequences[marketId] = 1;
-    console.log(`orderBookSnapshotMock called: ${marketId}`);
+    // console.log(`orderBookSnapshotMock called: ${marketId}`);
     let orders = await customRanger.getOrderBook(marketId);
     try {
         if (isSubscribed(ws.streams, `${marketId}.ob-inc`)) {
-            console.log(`orderBookSnapshotMock sending: ${marketId}`);
+            // console.log(`orderBookSnapshotMock sending: ${marketId}`);
             const payload = {};
             payload[`${marketId}.ob-snap`] = {"asks": orders.asks, "bids": orders.bids, "sequence":1};
             ws.send(JSON.stringify(payload));
@@ -215,7 +215,7 @@ const matchedTradesMock = (ws) => async () => {
     else
         trades = await Trade.find({market: pair.id, _id: {$gt: ws.recent_trades_id}}).select({ pair_id: 0}).sort({created_at:1}).limit(10);
 
-    console.log("recent trades".blue,   trades, ws.recent_trades_id);  
+    // console.log("recent trades".blue,   trades, ws.recent_trades_id);  
         
     if(trades && trades.length>0)
     {
@@ -260,7 +260,7 @@ const klinesMock = (ws) => async () => {
     const [pairAddress, period, periodStr] = customRanger.getKLineParams(ws.streams);    
 
     let kLineItem = await customRanger.getChartTrades(pairAddress, period);
-    console.log("kLineItem: ".red, kLineItem, pairAddress, periodStr);
+    // console.log("kLineItem: ".red, kLineItem, pairAddress, periodStr);
     if(kLineItem && kLineItem.length && kLineItem.length>0)
         ws.send(JSON.stringify({kline: {item: kLineItem, pair: pairAddress, period: periodStr}}));
 };

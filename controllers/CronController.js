@@ -693,7 +693,7 @@ module.exports = BaseController.extend({
               }  
               else fromTime = lastTrade[0].created_at;
 
-        let orders =await  Order.find({status:"executed", market:{$exists: true}, updatedAt:{$gte:fromTime}}).sort({updatedAt:1}).limit(1000);
+        let orders =await  Order.find({status:"executed", ord_type:"market" , market:{$exists: true}, updatedAt:{$gte:fromTime}}).sort({updatedAt:1}).limit(1000);
         if( orders.length<1) 
         {
             console.log("no syncing order and trade");

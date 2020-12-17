@@ -163,11 +163,13 @@ const customRanger = {
         // console.log("market: ", marketId, "order books: buy=", allBuyOrdersByMarket.length, "sell=", allSellOrdersByMarket.length);
         for(let i=0;i<allBuyOrdersByMarket.length; i++)
         {
-            bids.push([allBuyOrdersByMarket[i].price, allBuyOrdersByMarket[i].amount ]);
+            if(allBuyOrdersByMarket[i].amount < 0.001) continue;
+            bids.push([allBuyOrdersByMarket[i].price, allBuyOrdersByMarket[i].amount, allBuyOrdersByMarket[i].price * allBuyOrdersByMarket[i].amount] );
         }
         for(let i=0;i<allSellOrdersByMarket.length; i++)
         {
-            asks.push([allSellOrdersByMarket[i].price,  allSellOrdersByMarket[i].amount ]);  
+            if(allSellOrdersByMarket[i].amount < 0.001) continue;
+            asks.push([allSellOrdersByMarket[i].price,  allSellOrdersByMarket[i].amount, allSellOrdersByMarket[i].price * allSellOrdersByMarket[i].amount ]);  
         }
         // for (let i = 0; i < askOrders.length; i++) {
         //     let inputAmount = k_functions.big_to_float(askOrders[i].inputAmount);

@@ -312,14 +312,14 @@ class RangerMock {
         // console.log("----streams", ws.streams);
         
         
-        ws.timers.push(setInterval(tickersMock(ws), 10000));
+        ws.timers.push(setInterval(tickersMock(ws), 60000));
         
         // ws.timers.push(setInterval(orderBookIncrementMock(ws), 2000));
         // ws.timers.push(setInterval(orderBookUpdateMock(ws), 2000));
-        ws.timers.push(setInterval(matchedTradesMock(ws), 3000));    ///== ranger for recent trades    
+        ws.timers.push(setInterval(matchedTradesMock(ws), 4000));    ///== ranger for recent trades    
         ws.timers.push(setInterval(klinesMock(ws), 5000));           ///== ranger for chart
         ws.timers.push(setInterval(ordersMock(ws), 4000));           ///== ranger for my order
-        ws.timers.push(setInterval(orderBookSnapshotMock(ws),7000)); ///== ranger for order book
+        ws.timers.push(setInterval(orderBookSnapshotMock(ws),3000)); ///== ranger for order book
         
     }
     closeConnection(ws) {

@@ -194,7 +194,7 @@ const customRanger = {
         if(from_id===0)
             myOrderAll = await Order.find({ owner: ownerAddress}).sort({_id : 1}).limit(50);
         else
-            myOrderAll = await Order.find({ owner: ownerAddress, $or:[{_id:{$gt: from_id}}, {updatedAt:{$gt: from_update_at}}]}); //find({ owner: ownerAddress, _id:{$gt: from_id}}).sort({_id : 1}).limit(50);
+            myOrderAll = await Order.find({ owner: ownerAddress, $or:[{_id:{$gt: from_id}}, {updatedAt:{$gt: from_update_at}}]}).sort({_id : 1}).limit(50); //find({ owner: ownerAddress, _id:{$gt: from_id}}).sort({_id : 1}).limit(50);
             
 
         

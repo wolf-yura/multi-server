@@ -186,21 +186,29 @@ const customRanger = {
         return {asks: asks, bids: bids};
     },    
     // 
-    getMyOrders: async function (ownerAddress, marketId) {
+    getMyOrders: async function (ownerAddress, marketId, from_update_at=0, from_id=0) {
 
         // console.log("--- owner address: ", ownerAddress);  
-        let myOrderAll = await Order.find({ owner: ownerAddress }).sort({updatedAt : -1}).limit(500);
+        let myOrderAll=[];
+        
+        if(from_id===0)
+            myOrderAll = await Order.find({ owner: ownerAddress}).sort({_id : 1}).limit(50);
+        else
+            myOrderAll = await Order.find({ owner: ownerAddress, _id:{$gt: from_id}}).sort({_id : 1}).limit(50);
+
         
         // let myOrderOpen = [];
         let myOrderHistory = [];
         // console.log("myorder count", myOrderAll.length)
         // console.log(myOrderAll);
+        // let last_id = -1;
         for (let i = 0; i < myOrderAll.length; i++) {                                 
             // let inputAmount = k_functions.big_to_float(myOrderAll[i].inputAmount);
             // let minReturn = k_functions.big_to_float(myOrderAll[i].minReturn);
             // let price = parseFloat((minReturn / inputAmount).toFixed(6));                        
             // const side = myOrderAll[i].inputToken == pair.base_contract? "buy" : "sell";
-            let amount = myOrderAll[i].amount;
+            let amount = Math.round((myOrderAll[i].amount + Number.EPSILON) * 10000) / 10000;// myOrderAll[i].amount;
+
             let remaining_volume = 0;    
 
             let state = "done";
@@ -215,35 +223,36 @@ const customRanger = {
             const orderData={
                 state:state , 
                 volume: amount,
-                price: myOrderAll[i].price, 
+                price:  Math.round((myOrderAll[i].price + Number.EPSILON) * 100000) / 100000, //     myOrderAll[i].price.toFixed(5), 
                 id: myOrderAll[i].id, 
-                remaining_volume: remaining_volume, 
-                origin_volume: amount, 
+                remaining_volume: remaining_volume,
+                origin_volume: amount,
                 market: myOrderAll[i].market, 
                 updated_at: myOrderAll[i].updatedAt,
                 created_at: myOrderAll[i].createdAt,
                 side : myOrderAll[i].side,
                 tx_hash: myOrderAll[i].createdTxHash,
                 ord_type: myOrderAll[i].ord_type,
-                module: myOrderAll[i].status ==="open"?myOrderAll[i].module:undefined,
-                witness: myOrderAll[i].status ==="open"?myOrderAll[i].witness:undefined,
-                inputToken :  myOrderAll[i].status ==="open"?myOrderAll[i].inputToken:undefined,
-                outputToken : myOrderAll[i].status ==="open"?myOrderAll[i].outputToken:undefined,
-                minReturn : myOrderAll[i].status ==="open"?myOrderAll[i].minReturn:undefined,
+                // module: myOrderAll[i].status ==="open"?myOrderAll[i].module:undefined,
+                // witness: myOrderAll[i].status ==="open"?myOrderAll[i].witness:undefined,
+                // inputToken :  myOrderAll[i].status ==="open"?myOrderAll[i].inputToken:undefined,
+                // outputToken : myOrderAll[i].status ==="open"?myOrderAll[i].outputToken:undefined,
+                // minReturn : myOrderAll[i].status ==="open"?myOrderAll[i].minReturn:undefined,
                 // pair : market.id
                 };
             
 
             if(myOrderAll[i].status==="executed" || myOrderAll[i].status === "cancelled")
             {
-                orderData.excuted_vloume= amount; 
+                orderData.excuted_vloume= amount;//  Math.round((myOrderAll[i].amount + Number.EPSILON) * 100000) / 100000;// amount.toFixed(5); 
             }
             // if( myOrderAll[i].status==="open")
             //     myOrderOpen.push(orderData);
             // else
             myOrderHistory.push(orderData);
         }        
-        return myOrderHistory;
+        if(myOrderAll.length>0)console.log( myOrderAll[myOrderAll.length-1]._id);
+        return {orders: myOrderHistory, last_id: myOrderAll.length>0? myOrderAll[myOrderAll.length-1]._id:undefined };
     },
 };
 

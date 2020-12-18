@@ -45,16 +45,23 @@ const ordersMock = (ws) => async () => {
     // console.log("market Id ", marketId);
     ws.sequences[marketId] = 1;    
     
+    
     // console.log(`orderBookSnapshotMock called: ${marketId}`);    
-    let orders = await customRanger.getMyOrders(ownerAddress, marketId);  
+    let {orders, last_id} = await customRanger.getMyOrders(ownerAddress, marketId, ws.order_updated_at, ws.order_last_updated_id);  
+    console.log("--ws address, upated at, length", ownerAddress, ws.order_last_updated_id, orders.length, last_id );
 
     if(orders.length>0)
     {        
-        const last_order_updated_at = orders[0].updated_at;
-        if(last_order_updated_at > ws.order_updated_at)
+        // const last_order_updated_at = orders[orders.length-1].updated_at;
+        // const last_id = orders[orders.length-1]._id;
+        // console.log(orders[orders.length-1].order_updated_at);
+        // if(last_order_updated_at > ws.order_updated_at)
+        if(last_id > ws.order_last_updated_id || ws.order_last_updated_id ===0 )
         {
-            ws.order_updated_at= orders[0].updated_at;        
-            console.log("---last update", ws.order_updated_at);
+            // ws.order_updated_at= orders[orders.length-1].updated_at;        
+            ws.order_last_updated_id= last_id;// orders[orders.length-1]._id;
+                    
+            // console.log("---last update", ws.order_updated_at);
             try {
                 if (isSubscribed(ws.streams, `${ownerAddress}.myorders`)) {            
                     let pairOrders = {
@@ -241,6 +248,7 @@ const matchedTradesMock = (ws) => async () => {
         sendEvent(ws, `${marketId}.trades`, { "trades": sendTrades });    
         ws.recent_trades_updated_at =  trades[trades.length-1].created_at;
         ws.recent_trades_id = trades[trades.length-1]._id;
+        console.log,"--recent trades",(ws.recent_trades_id);
     }
 };
 
@@ -294,6 +302,7 @@ class RangerMock {
         ws.streams = [];
         ws.sequences = {};
         ws.order_updated_at = 0;
+        ws.order_last_updated_id = 0;
         ws.recent_trades_updated_at = parseInt( Date.now()/1000);
         ws.recent_trades_id = 0;
         console.log(`Ranger: connection accepted, url: ${request.url}`);

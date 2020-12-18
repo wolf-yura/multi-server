@@ -48,17 +48,17 @@ const ordersMock = (ws) => async () => {
     
     // console.log(`orderBookSnapshotMock called: ${marketId}`);    
     let {orders, last_id} = await customRanger.getMyOrders(ownerAddress, marketId, ws.order_updated_at, ws.order_last_updated_id);  
-    console.log("--ws address, upated at, length", ownerAddress, ws.order_last_updated_id, orders.length, last_id );
+    // console.log("--ws address, upated at, length", ownerAddress, ws.order_last_updated_id, orders.length, last_id );
 
     if(orders.length>0)
     {        
-        // const last_order_updated_at = orders[orders.length-1].updated_at;
+        //  const last_order_updated_at = orders[orders.length-1].updated_at;
         // const last_id = orders[orders.length-1]._id;
         // console.log(orders[orders.length-1].order_updated_at);
         // if(last_order_updated_at > ws.order_updated_at)
-        if(last_id > ws.order_last_updated_id || ws.order_last_updated_id ===0 )
-        {
-            // ws.order_updated_at= orders[orders.length-1].updated_at;        
+        // if(last_id > ws.order_last_updated_id || ws.order_last_updated_id ===0 )
+        // {
+            ws.order_updated_at= orders[orders.length-1].updated_at;        
             ws.order_last_updated_id= last_id;// orders[orders.length-1]._id;
                     
             // console.log("---last update", ws.order_updated_at);
@@ -76,7 +76,7 @@ const ordersMock = (ws) => async () => {
             } catch (error) {
                 console.log(`failed to send ranger message: ${error}`);
             } 
-        }       
+        // }       
     }
        
 };

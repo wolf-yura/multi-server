@@ -194,7 +194,8 @@ const customRanger = {
         if(from_id===0)
             myOrderAll = await Order.find({ owner: ownerAddress}).sort({_id : 1}).limit(50);
         else
-            myOrderAll = await Order.find({ owner: ownerAddress, _id:{$gt: from_id}}).sort({_id : 1}).limit(50);
+            myOrderAll = await Order.find({ owner: ownerAddress, $or:[{_id:{$gt: from_id}}, {updatedAt:{$gt: from_update_at}}]}); //find({ owner: ownerAddress, _id:{$gt: from_id}}).sort({_id : 1}).limit(50);
+            
 
         
         // let myOrderOpen = [];
@@ -233,11 +234,11 @@ const customRanger = {
                 side : myOrderAll[i].side,
                 tx_hash: myOrderAll[i].createdTxHash,
                 ord_type: myOrderAll[i].ord_type,
-                // module: myOrderAll[i].status ==="open"?myOrderAll[i].module:undefined,
-                // witness: myOrderAll[i].status ==="open"?myOrderAll[i].witness:undefined,
-                // inputToken :  myOrderAll[i].status ==="open"?myOrderAll[i].inputToken:undefined,
-                // outputToken : myOrderAll[i].status ==="open"?myOrderAll[i].outputToken:undefined,
-                // minReturn : myOrderAll[i].status ==="open"?myOrderAll[i].minReturn:undefined,
+                module: myOrderAll[i].status ==="open"?myOrderAll[i].module:undefined,
+                witness: myOrderAll[i].status ==="open"?myOrderAll[i].witness:undefined,
+                inputToken :  myOrderAll[i].status ==="open"?myOrderAll[i].inputToken:undefined,
+                outputToken : myOrderAll[i].status ==="open"?myOrderAll[i].outputToken:undefined,
+                minReturn : myOrderAll[i].status ==="open"?myOrderAll[i].minReturn:undefined,
                 // pair : market.id
                 };
             

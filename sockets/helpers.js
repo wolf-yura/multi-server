@@ -136,7 +136,7 @@ const Helpers = {
             if(market)           
             {
                 const orderSide = market.quote_unit==="bnb"? "buy" :"sell";
-                return {marketId: market.id, orderSide: orderSide}
+                return {marketId: market.id, orderSide: orderSide, pairId: market.pair_id}
             }
             else return{marketId: undefined,orderSide: undefined}
             // return market? { marketId: market.id, orderSide:""}:undefined;
@@ -147,7 +147,7 @@ const Helpers = {
             if(market)
             {
                 const orderSide = market.base_unit==="bnb"? "buy" :"sell";
-                return {marketId: market.id, orderSide: orderSide}
+                return {marketId: market.id, orderSide: orderSide, pairId: market.pair_id}
             }
             else return{marketId: undefined,orderSide: undefined}
         } 
@@ -155,7 +155,7 @@ const Helpers = {
         if(market)
             {
                 const orderSide = market.quote_contract=== order.inputToken? "buy" :"sell";
-                return {marketId: market.id, orderSide: orderSide}
+                return {marketId: market.id, orderSide: orderSide, pairId: market.pair_id}
             }
        return{marketId: undefined,orderSide: undefined}
         // console.log(order.inputToken, order.outputToken);
@@ -169,7 +169,7 @@ const Helpers = {
         if(market)
             {
                 const orderSide = order.amount0In==="0"? "buy" :"sell";
-                return {marketId: market.id, orderSide: orderSide}
+                return {marketId: market.id, orderSide: orderSide, pairId: market.pair_id}
             }
        return{marketId: undefined, orderSide: undefined}
         // console.log(order.inputToken, order.outputToken);

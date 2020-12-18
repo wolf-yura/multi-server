@@ -537,7 +537,7 @@ module.exports = BaseController.extend({
         await this.cron_trade_data();
     },
     add_limit_order: async function (newOrder) {
-        const {marketId, orderSide }= await Helpers.getMarketIdFromLimitOrder(newOrder);
+        const {marketId, orderSide, pairId }= await Helpers.getMarketIdFromLimitOrder(newOrder);
         // let orderSide = "buy";
         // if(Market.findOne({id: marketId}).quote_contract === newOrder.outputToken)
         //     orderSide = "sell";
@@ -588,7 +588,8 @@ module.exports = BaseController.extend({
             side: orderSide,
             price: price,
             ord_type: "limit",
-            amount:amount
+            amount:amount,
+            pair_id: pairId
         });
         await orderItem.save();
         return orderItem;
@@ -627,7 +628,7 @@ module.exports = BaseController.extend({
         //         }}); 
     },
     add_market_order: async function (newOrder) {
-        const {marketId, orderSide }= await Helpers.getMarketIdFromMarketOrder(newOrder);
+        const {marketId, orderSide, pairId }= await Helpers.getMarketIdFromMarketOrder(newOrder);
         // let orderSide = "buy";
         // if(Market.findOne({id: marketId}).quote_contract === newOrder.outputToken)
         //     orderSide = "sell";
@@ -657,7 +658,7 @@ module.exports = BaseController.extend({
             // minReturn: newOrder.minReturn,
             // module: newOrder.module,
             outputToken: outputToken,
-            owner: newOrder.to,
+            owner: newOrder.from,
             // secret: newOrder.secret,
             status: "executed",
             // witness: newOrder.witness,
@@ -671,7 +672,8 @@ module.exports = BaseController.extend({
             side: orderSide,
             price: price,
             ord_type: "market",
-            amount:amount
+            amount:amount,
+            pair_id: pairId
         });
         await orderItem.save();
         return orderItem;
@@ -717,7 +719,8 @@ module.exports = BaseController.extend({
               total: order.amount*order.price,
               market: order.market,
               created_at: order.updatedAt,
-              taker_type: order.side
+              taker_type: order.side,
+              pair_id: order.pair_id
           };
           let newTradeItem = new Trade(trade_item);
           await newTradeItem.save();

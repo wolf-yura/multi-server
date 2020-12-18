@@ -308,7 +308,8 @@ module.exports = BaseController.extend({
                 transaction {
                     id
                     blockNumber
-                }  
+                }
+                from  
             }
           }`;
           let retData=undefined;

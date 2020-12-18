@@ -3,8 +3,7 @@ const Schema = mongoose.Schema;
 
 let OrderSchema = new Schema({
     id: String,  // '0x8a4fc7924189678a0caa9a85bd9e927467ac73fbc84972cfab40afc295ea03ad',
-    market:String, // 'julbbnb'
-    pairId:String,
+    market:String, // 'julbbnb'    
     price: Number, // 1.23
     inputAmount: String,  // '20667310718197501589',
     inputToken: String,  // '0x32dffc3fe8e3ef3571bf8a72c0d0015c5373f41d',
@@ -24,6 +23,7 @@ let OrderSchema = new Schema({
     executedTxHash: String,
     side: String, // "buy" or "sell"
     ord_type: String, //"limit" or "market"
+    pair_id:String, // 0x12faa...
     amount: Number
 });
 

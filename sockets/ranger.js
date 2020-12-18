@@ -210,10 +210,14 @@ const matchedTradesMock = (ws) => async () => {
     let pair = await Market.findOne({id: marketId});       
 
     let trades=[];
-    if( ws.recent_trades_id===0)
-        trades = await Trade.find({market: pair.id, created_at: {$gt: ws.recent_trades_updated_at}}).select({ pair_id: 0}).sort({created_at:1}).limit(10);
-    else
-        trades = await Trade.find({market: pair.id, _id: {$gt: ws.recent_trades_id}}).select({ pair_id: 0}).sort({created_at:1}).limit(10);
+    
+    if(pair && pair.id)
+    {
+        if( ws.recent_trades_id===0)
+            trades = await Trade.find({market: pair.id, created_at: {$gt: ws.recent_trades_updated_at}}).select({ pair_id: 0}).sort({created_at:1}).limit(10);
+        else
+            trades = await Trade.find({market: pair.id, _id: {$gt: ws.recent_trades_id}}).select({ pair_id: 0}).sort({created_at:1}).limit(10);
+    }
 
     // console.log("recent trades".blue,   trades, ws.recent_trades_id);  
         

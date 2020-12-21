@@ -18,6 +18,9 @@ let TickerSchema = new Schema({
     oneday_fee_usd: Number,
     pool_base_tokens: Number,  
     pool_quote_tokens: Number,
+    liquidity_change_usd: Number,
+    volume_change_usd: Number,
+    
 });
 
 module.exports.Ticker = mongoose.model('tickers', TickerSchema);

@@ -254,7 +254,9 @@ module.exports = BaseController.extend({
                     oneday_volume_usd: pairGlobalData.oneDayVolumeUSD,
                     oneday_fee_usd: fees,
                     pool_base_tokens : pairGlobalData.reserve0,
-                    pool_quote_tokens : pairGlobalData.reserve1
+                    pool_quote_tokens : pairGlobalData.reserve1,
+                    liquidity_change_usd: pairGlobalData.liquidityChangeUSD,
+                    volume_change_usd: pairGlobalData.volumeChangeUSD
                 });                
             } else {
                 let newTickerItem = new Ticker(tickerItem);

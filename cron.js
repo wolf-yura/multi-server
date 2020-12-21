@@ -21,7 +21,7 @@ mongoose.connect('mongodb://' + config.mongo.host + ':' + config.mongo.port + '/
             if (!marketCheck) await CronController.cron_markets();
             let tickets = await Ticker.findOne({});                
             // if(!tickets) 
-            // await CronController.cron_ticker_data();
+            await CronController.cron_ticker_data();
             // let trades = await Trade.findOne({});   
             // if(!trades) await CronController.cron_trade();
             // await CronController.cron_trade_data();

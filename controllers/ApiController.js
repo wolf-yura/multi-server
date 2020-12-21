@@ -36,7 +36,12 @@ module.exports = BaseController.extend({
                     low: tickers[i].low.toString(),
                     open: tickers[i].open.toString(),
                     price_change_percent: tickers[i].price_change_percent,
-                    volume: tickers[i].volume.toString()
+                    volume: tickers[i].volume.toString(),
+                    total_liquidity: tickers[i].total_liquidity,
+                    oneday_volume_usd: tickers[i].oneday_volume_usd,
+                    oneday_fee_usd: tickers[i].oneday_fee_vsd,
+                    pool_base_tokens: tickers[i].pool_base_tokens,  
+                    pool_quote_tokens: tickers[i].pool_quote_tokens,
                 }
             }
         }

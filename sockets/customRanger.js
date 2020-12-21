@@ -92,6 +92,11 @@ const customRanger = {
                 price_change_percent: tickers[i].price_change_percent,
                 volume: tickers[i].volume.toString(),
                 at: tickers[i].at.toString(),
+                total_liquidity: tickers[i].total_liquidity,
+                oneday_volume_usd: tickers[i].oneday_volume_usd,
+                oneday_fee_usd: tickers[i].oneday_fee_vsd,
+                pool_base_tokens: tickers[i].pool_base_tokens,  
+                pool_quote_tokens: tickers[i].pool_quote_tokens,
             }
         }
         return k_tickers;

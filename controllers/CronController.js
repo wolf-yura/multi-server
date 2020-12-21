@@ -15,6 +15,8 @@ let M240Trade = require('../models/M240Trade').M240Trade;
 let Ticker = require('../models/Ticker').Ticker;
 const k_functions = require('../sockets/k_functions')();
 
+const {getTopPairsData} = require('./utils/PairData')
+
 let stop_timestamp = 1514764800;  // 2018-01-01
 module.exports = BaseController.extend({
     name: 'CronController',
@@ -165,10 +167,16 @@ module.exports = BaseController.extend({
         let time_48h_old = parseInt(new Date().setDate(new Date().getDate() - 2) / 1000);
                 
         let markets = await Market.find({});
+        //----- get global markets data ----//
+        const pairList = markets.map(pair=>{return pair.pair_id});
+        let pairsData = await getTopPairsData(pairList);
+        
         for (let i = 0; i < markets.length; i++) {
             let curMarket = markets[i];
-            let pair_id = markets[i].pair_id;
+            let pair_id = markets[i].pair_id; 
             let pair_name = markets[i].id;  // ex: julbbnb
+            //----- update token data from graphql --------//
+            
             // console.log("--- pair name ", pair_name);
             let today_trades = await Trade.find({created_at:{$gte: time_24h_old, $lte: time_to}, market: pair_name}).sort({created_at:1});
             let yesterday_trades = await Trade.find({created_at:{$gte: time_48h_old, $lte: time_24h_old}, market: pair_name});            
@@ -183,7 +191,7 @@ module.exports = BaseController.extend({
                 "volume": 0.0,
                 "avg_price": 0.0,
                 "price_change_percent": "+0.00%",
-                "at": time_to,
+                "at": time_to,                
             };
                
             let sumPrice = 0;
@@ -223,6 +231,14 @@ module.exports = BaseController.extend({
             tickerItem.amount = sumAmount;
             tickerItem.volume = sumVolume;
             let checkTickerItem = await Ticker.findOne({pair_id: pair_id});
+            let pairGlobalData =  pairsData.find( e=> {return  e.id===pair_id  });            
+            
+            // console.log(pairGlobalData);
+            const usingUtVolume = false;
+            const fees =
+            pairGlobalData.oneDayVolumeUSD || pairGlobalData.oneDayVolumeUSD === 0 ? 
+            usingUtVolume ? (pairGlobalData.oneDayVolumeUntracked * 0.003) : (pairGlobalData.oneDayVolumeUSD * 0.003): '_';
+
             if (checkTickerItem) {
                 await checkTickerItem.updateOne({
                     amount: tickerItem.amount,
@@ -233,8 +249,13 @@ module.exports = BaseController.extend({
                     volume: tickerItem.volume,
                     avg_price: tickerItem.avg_price,
                     price_change_percent: tickerItem.price_change_percent,
-                    at: tickerItem.at
-                });
+                    at: tickerItem.at,
+                    total_liquidity: pairGlobalData.trackedReserveUSD,
+                    oneday_volume_usd: pairGlobalData.oneDayVolumeUSD,
+                    oneday_fee_usd: fees,
+                    pool_base_tokens : pairGlobalData.reserve0,
+                    pool_quote_tokens : pairGlobalData.reserve1
+                });                
             } else {
                 let newTickerItem = new Ticker(tickerItem);
                 await newTickerItem.save();
@@ -489,7 +510,7 @@ module.exports = BaseController.extend({
         if (orderHistory && orderHistory.length>0) {
             limitOrdersFromAt = orderHistory[0].updatedAt;
         }
-        //let orders = await Function.k_order_from_block(fromBlockNumber);
+        
         let orders = await Function.k_limit_order_history(limitOrdersFromAt);        
         console.log("--limit orders from ", limitOrdersFromAt);
         if(orders)

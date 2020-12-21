@@ -9,6 +9,12 @@ const { Trade } = require("./models/Trade");
 let Market = require('./models/Market').Market;
 let Function = require('./controllers/FunctionController');
 
+// let {getBnbPrice, getPairsData } = require('./controllers/utils/GlobalData');
+let {getTopPairsData} = require('./controllers/utils/PairData');
+
+let dayjs = require('dayjs');
+let utc = require('dayjs/plugin/utc')
+
 mongoose.connect('mongodb://' + config.mongo.host + ':' + config.mongo.port + '/' + config.mongo.db_name,
     {useNewUrlParser: true, useUnifiedTopology: true}, async function (err, db) {
         mongoose.set('useFindAndModify', false);
@@ -33,8 +39,37 @@ mongoose.connect('mongodb://' + config.mongo.host + ':' + config.mongo.port + '/
             //     console.log('timeout beyond time');
             //   }, 1000);
 
-            let orders = await Function.k_limit_order_history(1604214040); 
-            console.log(orders?orders.length:"--null-");
+            // let orders = await Function.k_limit_order_history(1604214040); 
+            
+
+            const utcCurrentTime = dayjs()
+            const utcOneDayBack = utcCurrentTime.subtract(1, 'day').unix()
+            // let test  = await Function.k_block(utcOneDayBack);
+            const utcTwoDaysBack = utcCurrentTime.subtract(2, 'day').unix()
+            const utcOneWeekBack = utcCurrentTime.subtract(1, 'week').unix()
+            const utcTwoWeeksBack = utcCurrentTime.subtract(2, 'week').unix()
+            
+            const pairs  = await  Market.find();
+            const pairList = pairs.map(pair=>{return pair.pair_id});
+
+            // let [oneDayBlock, twoDayBlock, oneWeekBlock, twoWeekBlock] = await getBlocksFromTimestamps([
+            //     utcOneDayBack,
+            //     utcTwoDaysBack,
+            //     utcOneWeekBack,
+            //     utcTwoWeeksBack
+            //   ])
+            // let bnbPrice = await getBnbPrice();
+            let pairsData = await getTopPairsData(pairList);
+            let pair  = pairsData.find(e => {return e.id==='0xccfe1a5b6e4ad16a4e41a9142673dec829f39402';})
+              // get fees	  // get fees
+            const usingUtVolume = false;
+            const fees =
+            pair.oneDayVolumeUSD || pair.oneDayVolumeUSD === 0 ? 
+            usingUtVolume ? (pair.oneDayVolumeUntracked * 0.003) : (pair.oneDayVolumeUSD * 0.003): '_';
+
+              console.log(pair, fees)
+
+            // console.log(orders?orders.length:"--null-");
 
               
         }

@@ -1,9 +1,21 @@
 const fetch = require('node-fetch');
-const { client, relayClient, swapClient } = require('./apollo/client');
+const { client, relayClient, swapClient, blockClient } = require('./apollo/client');
 const queries = require('./apollo/queries')();
 const colors = require('colors');
 let BaseController = require('./BaseController');
 const stableTokens = ['USDT', 'USDC', 'BUSD', 'DAI', 'BNB'];
+
+
+const GET_BLOCKS = timestamps => {
+    let queryString = 'query blocks {'
+    queryString += timestamps.map(timestamp => {
+      return `t${timestamp}:blocks(first: 1, orderBy: timestamp, orderDirection: desc, where: { timestamp_gt: ${timestamp}, timestamp_lt: ${timestamp +
+        600} }) {  number }`
+    })
+    queryString += '}'
+    return gql(queryString)
+  }
+
 module.exports = BaseController.extend({
     name: 'FunctionController',
     k_sampleMarkets: function () {
@@ -363,39 +375,34 @@ module.exports = BaseController.extend({
         });
         const { data } = await res.json();
         return  data.orders;
-    },    
-    k_order_from_block: async function (blockNumber) {
-        const query = `
-          query getOrdersFromBlock($blockNumber: Int) {
-            orders(first: 500, where: {blockNumber_gte: $blockNumber}, orderBy: blockNumber, orderDirection: desc) {
-                id
-                inputToken
-                outputToken
-                minReturn
-                owner
-                secret
-                witness
-                module
-                inputAmount
-                createdTxHash
-                blockNumber
-                cancelledTxHash
-                executedTxHash    
-                status
-                createdAt
-                updatedAt
-                bought
-            }
-          }`;
-        const res = await fetch(relayClient, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                query,
-                variables: { blockNumber: blockNumber}
-            }) // Get some from re-orgs
-        });
-        const { data } = await res.json();
-        return  data.orders;
+    },        
+    k_get_bnb_price: async function() {
+        //---- get blockNumber ----//
+        let oneDayblock;
+        try{
+            
+        }   
+        catch{
+
+        } 
+    },
+    k_block: async function (timeStamp) {
+
+        try {
+            let value = '';
+            let block = await blockClient.query({
+                query: queries.GET_BLOCK,
+                variables: {
+                    timestampFrom: timeStamp,
+                    timestampTo: timeStamp + 600
+                }
+            });            
+            // let allPairs = pairs.data.as0.concat(pairs.data.as1);
+            console.log("Function k_block success".blue);
+            return block
+        } catch (e) {
+            console.log("k_block graphql error: ".red, e);
+            return []
+        }
     },
 });

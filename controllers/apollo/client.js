@@ -23,7 +23,7 @@ const healthClient = new ApolloClient({
 
 const blockClient = new ApolloClient({
   link: new HttpLink({
-    uri: 'https://subgraph.bscswap.com/subgraphs/name/bscswap/bsc-blocks-timestamp',
+    uri: 'https://api.bscgraph.org/subgraphs/name/bsc-blocks',
     fetch: fetch
   }),
   cache: new InMemoryCache()

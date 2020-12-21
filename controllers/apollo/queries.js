@@ -180,9 +180,24 @@ query getOrdersFromBlock($$fromBlock: BigInt, $toBlock: BigInt) {
     updatedAt
   }
 }
-`
+`,
+GET_BLOCK: gql`
+  query blocks($timestampFrom: Int!, $timestampTo: Int!) {
+    blocks(
+      first: 1
+      orderBy: timestamp
+      orderDirection: asc
+      where: { timestamp_gt: $timestampFrom, timestamp_lt: $timestampTo }
+    ) {
+      id
+      number
+      timestamp
+    }
+  }
+`,
 };
 
 module.exports = function () {
     return queries;
 };
+

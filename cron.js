@@ -20,10 +20,11 @@ mongoose.connect('mongodb://' + config.mongo.host + ':' + config.mongo.port + '/
             let marketCheck = await Market.findOne({});
             if (!marketCheck) await CronController.cron_markets();
             let tickets = await Ticker.findOne({});                
-            if(!tickets) await CronController.cron_ticker_data();
+            // if(!tickets) 
+            // await CronController.cron_ticker_data();
             // let trades = await Trade.findOne({});   
             // if(!trades) await CronController.cron_trade();
-            await CronController.cron_trade_data();
+            // await CronController.cron_trade_data();
             // await CronController.cron_chart_15m();
             // await CronController.cron_chart_30m();
             // await CronController.cron_chart_60m();
@@ -44,16 +45,16 @@ mongoose.connect('mongodb://' + config.mongo.host + ':' + config.mongo.port + '/
             // }, 1000);
             loop_cron_order_data();
             // update ticker data
-            // cron.schedule('*/3 * * * *', async function () {  // per 3 minutes
-            //     await CronController.cron_tickers();
-            // });
-            setInterval(
-                async function () {  // per 2 minutes
-                    // await CronController.cron_tickers();
-                     await CronController.cron_ticker_data();
-                },
-                60000
-            )
+            cron.schedule('*/2 * * * *', async function () {  // per 3 minutes
+                await CronController.cron_ticker_data();
+            });
+            // setInterval(
+            //     async function () {  // per 2 minutes
+            //         // await CronController.cron_tickers();
+            //          await CronController.cron_ticker_data();
+            //     },
+            //     60000
+            // )
             // update order data
             // cron.schedule('*/3 * * * * *', async function () {  // per 5 minutes
             //     // await CronController.live_orders();

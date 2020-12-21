@@ -98,7 +98,8 @@ const customRanger = {
                 pool_base_tokens: tickers[i].pool_base_tokens,  
                 pool_quote_tokens: tickers[i].pool_quote_tokens,
                 liquidity_change_usd: tickers[i].liquidity_change_usd,
-                volume_change_usd: tickers[i].volume_change_usd
+                volume_change_usd: tickers[i].volume_change_usd,
+                oneday_fee_usd: tickers[i].oneday_fee_usd
             }
         }
         return k_tickers;

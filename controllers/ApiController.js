@@ -75,8 +75,9 @@ module.exports = BaseController.extend({
         //---------//
         // let trades = await Trade.find({pair_id: pair.pair_id, created_at: {$gte: time_from, $lte: time_to}}).sort({created_at: 1});
         let trades = await Trade.find({market: req.params.id, created_at: {$gte: time_from, $lte: time_to}}).sort({created_at: 1});
-        if (period < 15) period = 15;
-        else if (period > 240) period = 240;
+        if (period < 1) period = 1;
+        else 
+        if (period > 2400) period = 2400;
         console.log(trades.length, period);
         if (trades.length === 0) {
             console.log("   === No Data ===   ".red);

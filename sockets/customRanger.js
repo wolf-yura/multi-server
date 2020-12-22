@@ -108,8 +108,8 @@ const customRanger = {
         // console.log(" === getChartTrades === ".magenta, pairAddress);
         if (!pairAddress) return [];
         let pair = await Market.findOne({$or: [{id: pairAddress}, {pair_id: pairAddress}]});
-        if (period < 15) period = 15;
-        else if (period > 240) period = 240;
+        if (period < 1) period = 1;
+        else if (period > 2400) period = 2400;
         let time_from = parseInt(Date.now() / 1000);
         let time_to = 0 // parseInt((Date.now() + 1000 * 60 * period) / 1000);
 

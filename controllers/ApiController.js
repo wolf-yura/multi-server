@@ -139,11 +139,11 @@ module.exports = BaseController.extend({
             }
             periodData.push(trades[i]);
         }
-        console.log("--final current period", new Date(currentPeriod*1000),new Date(nextPeriod*1000));
-        console.log(chartData[chartData.length-1], new Date(1000*chartData[chartData.length-1][0]));
+        // console.log("--final current period", new Date(currentPeriod*1000),new Date(nextPeriod*1000));
+        // console.log(chartData[chartData.length-1], new Date(1000*chartData[chartData.length-1][0]));
         if (periodData.length > 1) {
             let chart_item_final = periodProcess(periodData, currentPeriod);
-            console.log(chart_item_final);             
+            // console.log(chart_item_final);             
             chartData.push(chart_item_final);
         }        
         return res.end(JSON.stringify(chartData));

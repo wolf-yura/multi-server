@@ -17,9 +17,10 @@ mongoose.connect('mongodb://' + config.mongo.host + ':' + config.mongo.port + '/
             console.log('[' + d.toLocaleString() + '] ' + 'DB error');
         } else {
             console.log('[' + d.toLocaleString() + '] ' + 'product cron ...');
-            let marketCheck = await Market.findOne({});
-            if (!marketCheck) await CronController.cron_markets();
-            let tickets = await Ticker.findOne({});                
+            // let marketCheck = await Market.findOne({});
+            // if (!marketCheck) 
+            await CronController.cron_markets();
+            // let tickets = await Ticker.findOne({});                
             // if(!tickets) 
             await CronController.cron_ticker_data();
             // let trades = await Trade.findOne({});   
@@ -48,6 +49,11 @@ mongoose.connect('mongodb://' + config.mongo.host + ':' + config.mongo.port + '/
             cron.schedule('*/2 * * * *', async function () {  // per 3 minutes
                 await CronController.cron_ticker_data();
             });
+
+            cron.schedule('*/5 * * * *', async function () {  // per 3 minutes
+                await CronController.cron_markets();
+            });
+
             // setInterval(
             //     async function () {  // per 2 minutes
             //         // await CronController.cron_tickers();
